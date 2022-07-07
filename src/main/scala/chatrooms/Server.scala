@@ -34,7 +34,7 @@ object Server extends ZIOAppDefault:
   val mkLayers = (SocketServer.liveConfig >>> SocketServer.live).memoize
 
 
-  private val app: ZIO[Any, Nothing, Unit] = for {
+  val app: ZIO[Any, Nothing, Unit] = for {
     map <- TRef.make(Map()).commit
     layers <- mkLayers.provideLayer(Scope.default)
 
