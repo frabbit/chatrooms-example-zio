@@ -1,5 +1,9 @@
 package chatrooms.domain
 
+import parsley.Parsley
+import parsley.combinator._
+import parsley.character._
+
 opaque type RoomName = String
 
 object RoomName:
@@ -8,3 +12,7 @@ object RoomName:
   extension (x : RoomName ) {
     def value : String = x
   }
+
+  val parser: Parsley[RoomName] = for {
+    roomName <- some(noneOf(' ', '\n', ','))
+  } yield RoomName(roomName.mkString)
