@@ -10,13 +10,7 @@ import zio.test.Gen as G
 import zio.Random
 import _root_.chatrooms.all.allSyntaxChatrooms
 
-object Generators {
-  def clientId : Gen[Random with Sized, ClientId] = G.uuid.map(u => ClientId(u.toString()))
-  def client : Gen[Random with Sized, Client] = clientId.map(id => Client(id))
-  def roomName : Gen[Random with Sized, RoomName] = G.stringBounded(1, 30)(G.char).map(s => RoomName(s))
-}
-
-def spec_ = suite("ServerState")(
+private def spec_ = suite("ServerState")(
     suite("empty should")(
       test("create an empty ServerState") {
         val expectedState = ServerState(Map(), Map())
