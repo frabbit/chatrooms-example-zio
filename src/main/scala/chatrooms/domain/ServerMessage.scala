@@ -9,7 +9,7 @@ import parsley.character as Character
 import parsley.implicits.character.{charLift, stringLift}
 
 sealed trait ServerMessage {
-  def encode () = ServerMessageEncoder.encode(this)
+  def encode = ServerMessageEncoder.encode(this)
 }
 
 final case class Acknowledge(command:String) extends ServerMessage

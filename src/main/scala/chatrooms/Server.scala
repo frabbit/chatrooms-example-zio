@@ -16,20 +16,27 @@ import chatrooms.domain.SocketServer
 import chatrooms.domain.{Callback, CallbackE}
 import zio.ZLayer
 import zio.Scope
+import chatrooms.domain.Command
+import chatrooms.domain.JoinRoom.apply
+import chatrooms.domain.Acknowledge
+import chatrooms.domain.JoinRoom
 
 object Server extends ZIOAppDefault:
 
-  def onConnect:CallbackE[SocketServer] = (x:(ClientId, WebSocketFrame)) =>  x._2.match {
-      case WebSocketFrame.Text("FOO")  => ZStream.succeed(WebSocketFrame.text("BAR"))
-      case WebSocketFrame.Text("BAR")  => ZStream.succeed(WebSocketFrame.text("FOO"))
-      case WebSocketFrame.Text("MYID") => ZStream.succeed(WebSocketFrame.text(x._1.value))
-      case WebSocketFrame.Text("MYIP") => for {
-        h <- ZStream.fromZIO(SocketServer.getHost(x._1))
-        x <- ZStream.succeed(WebSocketFrame.text(h))
+  def handleCommand (cmd:Command) = cmd.match {
+    case JoinRoom(roomName) => ZStream.succeed(WebSocketFrame.text(Acknowledge("joinRoom").encode))
+    case _ => ZStream.empty
+  }
+  def onConnect:CallbackE[SocketServer] = {
+      case x@(_, WebSocketFrame.Text(txt)) => for {
+        _ <- ZStream.fromZIO(zio.Console.printLine("message received" ++ txt).ignore)
+        x <- Command.parse(txt).match {
+          case Some(cmd) => handleCommand(cmd)
+          case None =>
+            ZStream.execute(zio.Console.printLine(s"Cannot parse Message from ${txt}".format(txt)).ignore)
+        }
       } yield x
-      case fr @ WebSocketFrame.Text(_) =>
-        ZStream.repeat(fr).schedule(Schedule.spaced(1.second)).take(10)
-    }
+  }
 
   val mkLayers = (SocketServer.liveConfig >>> SocketServer.live).memoize
 
@@ -37,9 +44,10 @@ object Server extends ZIOAppDefault:
   val app: ZIO[Any, Nothing, Unit] = for {
     map <- TRef.make(Map()).commit
     layers <- mkLayers.provideLayer(Scope.default)
-
-    _ <- SocketServer.start(t => onConnect(t).provideLayer(layers))
-      .provideLayer(layers)
+    _ <-
+      SocketServer.start({
+        case t if (onConnect.isDefinedAt(t)) => onConnect(t).provideLayer(layers)
+      }).provideLayer(layers)
 
   } yield ()
 

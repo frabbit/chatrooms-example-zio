@@ -14,11 +14,9 @@ object WebSocketClient extends ZIOAppDefault {
   def useWebSocket(ws: WebSocket[[X] =>> ZIO[Console, Throwable, X]]): RIO[Console, Unit] = {
     val receive = ws.receiveText().flatMap(t => Console.printLine(s"RECEIVED: $t"))
     ZIO.collectAllPar(List(
-        ws.sendText(s"MYIP"),
-        ws.sendText(s"MYID"),
+        ws.sendText(s":joinRoom myRoom"),
         receive,
-        receive,
-    )) map { _ => () }
+    )).unit
   }
 
   // create a description of a program, which requires two dependencies in the environment:

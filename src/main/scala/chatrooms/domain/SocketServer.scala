@@ -19,6 +19,10 @@ import zhttp.socket.IsWebSocket
 import java.util.UUID
 import zio.stm.TRef
 import zhttp.http.Path
+import zhttp.socket.Socket.PartialCollect
+import zhttp.service.Logging
+import zhttp.service.EventLoopGroup
+import zhttp.service.server.ServerChannelFactory
 
 
 case class SocketServerConfig(port: Int)
@@ -38,32 +42,38 @@ type RequestLookup = Map[String, Request]
 
 class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) extends SocketServer {
 
-  private def socket (id: String, callback : Callback) =
-    Socket.collect[WebSocketFrame](x => callback((ClientId(id), x)))
+  private def socket (id: String, callback : Callback):Socket[Any, Nothing, WebSocketFrame, WebSocketFrame] =
+    val pf:PartialFunction[WebSocketFrame, ZStream[Any, Nothing, WebSocketFrame]] = {
+      case x if callback.isDefinedAt((ClientId(id), x)) => callback((ClientId(id), x))
+    }
+    Socket.collect[WebSocketFrame](pf)
 
   private def app (callback: Callback) =
     Http.collectZIO[Request] {
-      case r@(Method.GET -> Path(Vector(), true)) => for {
+
+      case r@(Method.GET -> Path(Vector(), true)) =>
+        for {
+          _ <- Console.printLine("SERVER received: " ++ r.method.toString ++ " : " ++ r.path.toList.mkString)
           uuid <- ZIO.succeed(UUID.randomUUID())
           _ <- lookupRef.update(x => x + (uuid.toString -> r) ).commit
           x <- socket(uuid.toString, callback).toResponse
         } yield x
-      case r => for {
-        _ <- printLine("wrong" ++ " : " ++ r.method.toString ++ " : " ++ r.path.toList)
-        x <- ZIO.succeed(Response.ok)
-      } yield x
+      case r =>
+        for {
+          _ <- Console.printLine("SERVER received: " ++ r.method.toString ++ " : " ++ r.path.toList.mkString)
+          x <- ZIO.succeed(Response.ok)
+        } yield x
     }
 
-  def start:Start[Any] = (onConnect:Callback) => for {
-    _ <- Server.start(cfg.port, app(onConnect)).exitCode
-  } yield ()
+  def start:Start[Any] = (onConnect:Callback) =>
+    Server.start(cfg.port, app(onConnect)).exitCode *> ZIO.unit
 
-  def getHost (clientId:ClientId) = for {
-    req <- lookupRef.get.commit.map( _.get(clientId.value))
-    _ <- printLine(req.map(_.toString).toString).either
-    host <- req.flatMap(_.host).map(_.toString).getOrElse("<nohost>") |> ZIO.succeed
-    x <- host |> ZIO.succeed
-  } yield x
+  def getHost (clientId:ClientId) =
+    for {
+      req <- lookupRef.get.commit.map( _.get(clientId.value))
+      host <- req.flatMap(_.host).map(_.toString).getOrElse("<nohost>") |> ZIO.succeed
+      x <- host |> ZIO.succeed
+    } yield x
 }
 
 
