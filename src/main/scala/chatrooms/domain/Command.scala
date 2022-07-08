@@ -6,7 +6,7 @@ import parsley.character.{char, string, digit, oneOf, noneOf}
 import parsley.implicits.character.{charLift, stringLift}
 
 sealed trait Command {
-  def encode () = CommandEncoder.encode(this)
+  def encode = CommandEncoder.encode(this)
 }
 
 final case class JoinRoom(name:RoomName) extends Command
