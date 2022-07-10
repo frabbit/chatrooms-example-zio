@@ -81,6 +81,7 @@ object SocketServer {
   def start:Start[SocketServer] = (onConnect:Callback) => for {
     s <- ZIO.service[SocketServer]
     x <- s.start(onConnect)
+
   } yield x
 
   def getHost (clientId:ClientId):ZIO[SocketServer, Nothing, String] = for {
@@ -89,6 +90,7 @@ object SocketServer {
   } yield x
 
   def liveConfig:ZLayer[Any, Nothing, SocketServerConfig] = ZLayer.succeed(SocketServerConfig(8092))
+  def liveConfigWithPort (port:Int):ZLayer[Any, Nothing, SocketServerConfig] = ZLayer.succeed(SocketServerConfig(port))
 
   def live:ZLayer[SocketServerConfig, Nothing, SocketServer] = for {
     ref <- ZLayer.fromZIO(TRef.makeCommit[RequestLookup](Map()))

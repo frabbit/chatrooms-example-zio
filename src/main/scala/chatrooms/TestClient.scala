@@ -57,27 +57,28 @@ object TestClient {
       _ <- x.interrupt
     } yield ()
 
-  def createClientRaw (callback:Callback, queue:TQueue[Option[String]]): RIO[Console with SttpClient, Response[Unit]] =
-    sendR(basicRequest.get(uri"ws://127.0.0.1:8092")
+  def createClientRaw (callback:Callback, queue:TQueue[Option[String]], cfg:ServerConfig): RIO[Console with SttpClient, Response[Unit]] =
+    println(uri"ws://127.0.0.1:${cfg.port}")
+    sendR(basicRequest.get(uri"ws://127.0.0.1:${cfg.port}")
       .response(asWebSocketAlways((x:WS) => app(x, callback, queue))))
 
-  def createClient (callback:Callback) =
+  def createClient (callback:Callback, cfg:ServerConfig) =
     def mkSend (queue:TQueue[Option[String]]) =
       (s:Option[String]) => queue.offer(s).commit.ignore
     for {
       queue <- TQueue.unbounded[Option[String]].commit
-      clientFiber <- createClientRaw(callback, queue).fork
+      clientFiber <- createClientRaw(callback, queue, cfg).fork
       _ <- ZIO.sleep(200.milliseconds)
     } yield (mkSend(queue), clientFiber)
 
-  def createTypedClient [Msg, Cmd](callbackTyped:CallbackTyped[Msg], commandEncoder: Cmd => String, messageDecoder: String => Option[Msg]) =
+  def createTypedClient [Msg, Cmd](callbackTyped:CallbackTyped[Msg], commandEncoder: Cmd => String, messageDecoder: String => Option[Msg], cfg:ServerConfig) =
     val callback = (s:String) =>
       val msg = messageDecoder(s)
       msg.match {
         case Some(msg) => callbackTyped(msg)
         case None => ZIO.unit
       }
-    createClient(callback)
+    createClient(callback, cfg)
       .map(
         (send, clientFiber) => ((x:Option[Cmd]) => send(x.map(commandEncoder)), clientFiber))
 }

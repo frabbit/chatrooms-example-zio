@@ -8,17 +8,19 @@ import zio.test.Sized
 
 object Generators {
 
-  def clientId : Gen[Random with Sized, ClientId] = Gen.uuid.map(u => ClientId(u.toString()))
-  def client : Gen[Random with Sized, Client] = clientId.map(id => Client(id))
+  def clientId : Gen[Random with Sized, ClientId] = Gen.uuid.map(id => ClientId(id.toString()))
+  def client : Gen[Random with Sized, Client] = clientId.zip(userName).map(Client.apply)
   def roomName : Gen[Random with Sized, RoomName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => RoomName(s))
+  def userName : Gen[Random with Sized, UserName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => UserName(s))
   def command: Gen[Random with Sized, Command] =
     val txtGen = Gen.string1(Gen.alphaNumericChar.filter(c => c != '\n'))
     Gen.oneOf(
       roomName.map(JoinRoom(_)),
       roomName.map(LeaveRoom(_)),
       roomName.zip(txtGen).map(SendText.apply),
-      roomName.map(SendPing.apply),
-      roomName.map(ListRoomMembers.apply),
+      roomName.map(SendPing(_)),
+      roomName.map(ListRoomMembers(_)),
+      userName.map(Join(_)),
       Gen.const(ListRooms()),
     )
   def serverMessage: Gen[Random with Sized, ServerMessage] =

@@ -1,6 +1,6 @@
 package chatrooms.domain
 
-case class Client(id:ClientId)
+case class Client(id:ClientId, name:UserName)
 
 case class Room(name:RoomName, clients: Set[ClientId]) {
   def addClient (client:Client) = Room(this.name, this.clients + client.id)

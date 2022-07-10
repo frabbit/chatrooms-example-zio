@@ -8,16 +8,42 @@ import parsley.character.{char, string, digit, oneOf, noneOf}
 import parsley.character as Character
 import parsley.implicits.character.{charLift, stringLift}
 
+sealed trait ServerError {
+  def encode = ServerErrorEncoder.encode(this)
+}
+
+case class SEAlreadyJoined() extends ServerError
+
+object ServerErrorEncoder {
+  def encode (c:ServerError):String = c.match {
+    case SEAlreadyJoined() => "alreadyJoined"
+  }
+}
+
+object ServerErrorParser {
+  val alreadyJoinedParser: Parsley[SEAlreadyJoined] = for {
+    _ <- attempt(string("alreadyJoined"))
+    c <- Parsley.pure(SEAlreadyJoined())
+  } yield c
+
+  val parser: Parsley[ServerError] = for {
+    c <- alreadyJoinedParser
+    _ <- eof
+  } yield c
+}
+
 sealed trait ServerMessage {
   def encode = ServerMessageEncoder.encode(this)
 }
 
+final case class SMError(error:ServerError) extends ServerMessage
 final case class Acknowledge(command:String) extends ServerMessage
 final case class AllRoomNames(roomNames:List[RoomName]) extends ServerMessage
 final case class AllRoomMembers(roomName:RoomName, members:List[ClientId]) extends ServerMessage
 
 object ServerMessageEncoder {
   def encode (c:ServerMessage):String = c.match {
+    case SMError(error) => ":error " ++ error.encode
     case Acknowledge(name) => ":acknowledge " ++ name
     case AllRoomNames(names) => ":allRoomNames " ++ names.mkString(",")
     case AllRoomMembers(roomName:RoomName, members: List[ClientId]) => ":allRoomMembers " ++ roomName.value ++ " " ++ members.mkString(",")
@@ -51,6 +77,14 @@ object ServerMessageParser {
     _ <- char(' ')
     roomNames <- listOfParser(RoomName.parser)
     x <- Parsley.pure(AllRoomNames(roomNames))
+  yield x
+
+  val errorParser: Parsley[SMError] = for
+    _ <- attempt(string(":error"))
+    _ <- char(' ')
+
+    err <- ServerErrorParser.parser
+    x <- Parsley.pure(SMError(err))
   yield x
 
 
@@ -89,7 +123,7 @@ object ServerMessageParser {
 
 
   val parser: Parsley[ServerMessage] = for {
-    c <- acknowledgeParser <|> allRoomNamesParser <|> allRoomMembersParser
+    c <- acknowledgeParser <|> allRoomNamesParser <|> allRoomMembersParser <|> errorParser
     _ <- eof
   } yield c
 }

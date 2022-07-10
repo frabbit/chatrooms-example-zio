@@ -15,6 +15,7 @@ final case class SendText(name:RoomName, txt:String) extends Command
 final case class SendPing(name:RoomName) extends Command
 final case class ListRooms() extends Command
 final case class ListRoomMembers(name:RoomName) extends Command
+final case class Join(name:UserName) extends Command
 
 object CommandEncoder {
   def encode (c:Command):String = c.match {
@@ -23,6 +24,7 @@ object CommandEncoder {
     case ListRoomMembers(name) => ":listRoomMembers " ++ name.value
     case ListRooms() => ":listRooms"
     case SendText(r, t) => ":sendText " ++ r.value ++ " " ++ t
+    case Join(name) => ":join " ++ name.value
     case SendPing(r) => ":sendPing " ++ r.value
   }
 }
@@ -39,6 +41,13 @@ object CommandParser {
   val listRoomsParser: Parsley[ListRooms] = for {
     _ <- attempt(string(":listRooms"))
     x <- Parsley.pure(ListRooms())
+  } yield x
+
+  val joinParser: Parsley[Join] = for {
+    _ <- attempt(string(":join"))
+    _ <- char(' ')
+    userName <- UserName.parser
+    x <- Parsley.pure(Join(userName))
   } yield x
 
   val sendPingParser: Parsley[SendPing] = for {
@@ -70,12 +79,11 @@ object CommandParser {
     _ <- attempt(string(":leaveRoom"))
     _ <- char(' ')
     roomName <- roomNameParser
-
     x <- Parsley.pure(LeaveRoom(roomName))
   } yield x
 
   val parser: Parsley[Command] = for {
-    c <- leaveRoomParser <|> joinRoomParser <|> listRoomsParser <|> listRoomMembersParser <|> sendPingParser <|> sendTextParser
+    c <- leaveRoomParser <|> joinRoomParser <|> listRoomsParser <|> listRoomMembersParser <|> sendPingParser <|> sendTextParser <|> joinParser
     s <- eof
   } yield c
 }
