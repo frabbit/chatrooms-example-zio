@@ -39,7 +39,7 @@ def withServer [R, A, E](run: ServerConfig => ZIO[R, E, A]) = for {
   acquire =
     for
       s <- Server.app(cfg).fork
-      _ <- ZIO.sleep(300.milliseconds)
+      _ <- ZIO.sleep(450.milliseconds)
     yield s
   r <- ZIO.acquireReleaseWith(acquire)(_.interrupt.forkDaemon)(_ => run(cfg))
   } yield r
@@ -55,17 +55,19 @@ def waitForAll (queue: MsgQueue, msgs: List[ServerMessageFor]):UIO[Unit] =
   def go (left:List[ServerMessageFor]):UIO[Unit] =
     if left.length == 0
     then ZIO.unit
-    else queue.take.commit.flatMap(msg => go(msgs.filter(_ != msg)))
+    else queue.take.commit.flatMap(msg =>
+      go(left.filter(_ != msg))
+    )
   go(msgs)
 
 def sendAndWait (send:Send[Command], queue: MsgQueue, cmd: Option[Command], expectedMessages:List[ServerMessageFor]) =
   for {
     _ <- send(cmd)
-    res <- waitForAll(queue, expectedMessages).timeout(400.milliseconds)
+    res <- waitForAll(queue, expectedMessages).timeout(450.milliseconds)
     _ <- if res.isEmpty then ZIO.fail(WaitError(expectedMessages)) else ZIO.unit
   } yield ()
 
-def sendOnly (send:Send[Command], cmd: Option[Command]) = send(cmd).zip(ZIO.sleep(400.milliseconds))
+def sendOnly (send:Send[Command], cmd: Option[Command]) = send(cmd).zip(ZIO.sleep(250.milliseconds))
 
 def mkTestClientWithDeps(name:String, queue: MsgQueue, cfg:ServerConfig) =
   mkTestClient(name, queue, cfg)
@@ -79,7 +81,7 @@ def withOneClient[R,E,A](name:ClientName)(run:(ClientHandle,MsgQueue) => ZIO[R,E
           case (sendPim, fiberClient) => for {
             _ <- run(ClientHandle(name, sendPim), queue)
             _ <- fiberClient.await
-            _ <- ZIO.sleep(200.milliseconds)
+            _ <- ZIO.sleep(300.milliseconds)
           } yield ()
         }
       } yield ()
@@ -139,10 +141,20 @@ def fullSpec = suite("ChatroomsE2E")(
         _ <- sendAndWait(clientB.send, queue,
           Some(Join(UserName(clientA.name))),
           List(ServerMessageFor(clientB.name, SMError(SEAlreadyJoined()))))
-
-
         _ <- sendOnly(clientA.send, None)
         _ <- sendOnly(clientB.send, None)
+      } yield ()
+    }
+  }
+  +
+  test("sending direct messages should work") {
+    withTwoClients("Tom", "Abe") { (clientA, clientB, queue) =>
+      for {
+        _ <- Api.join(clientA, queue)
+        _ <- Api.join(clientB, queue)
+        _ <- Api.sendAndReceiveDirectMessage(clientA, clientB, queue, "a message from A to B")
+        _ <- Api.exitClient(clientA)
+        _ <- Api.exitClient(clientB)
       } yield ()
     }
   }
@@ -150,4 +162,23 @@ def fullSpec = suite("ChatroomsE2E")(
 
 object ChatroomsE2ESpec extends ZIOSpecDefault {
   override def spec = fullSpec
+}
+
+object Api {
+  def join (c:ClientHandle, queue:MsgQueue) =
+    sendAndWait(c.send, queue,
+          Some(Join(UserName(c.name))),
+          List(ServerMessageFor(c.name, Acknowledge("join"))))
+
+  def sendAndReceiveDirectMessage (sender:ClientHandle, receiver:ClientHandle, queue:MsgQueue, msg:String) =
+    sendAndWait(sender.send, queue,
+          Some(SendDirectMessage(UserName(receiver.name), msg)),
+          List(
+            ServerMessageFor(sender.name, Acknowledge("sendDirectMessage")),
+            ServerMessageFor(receiver.name, SMDirectMessage(UserName(sender.name), msg ))
+          )
+    )
+
+  def exitClient (c:ClientHandle) =
+    sendOnly(c.send, None)
 }

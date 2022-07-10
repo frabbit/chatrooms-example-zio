@@ -36,11 +36,25 @@ type Start[E] = (onConnect:Callback) => ZIO[Any & E, Nothing, Unit]
 trait SocketServer {
   def start:Start[Any]
   def getHost (clientId:ClientId):ZIO[Any, Nothing, String]
+  def sendTo (clientId:ClientId, message:String):ZIO[Any, Throwable, Unit]
 }
 
-type RequestLookup = Map[String, Request]
+type RequestLookup = Map[String, (Request, TQueue[String])]
 
 class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) extends SocketServer {
+
+  def sendTo (clientId:ClientId, message:String):ZIO[Any, Throwable, Unit] =
+
+    for {
+      _ <- Console.printLine("sendTo called" ++ (clientId, message).toString).ignore
+      lookup <- lookupRef.get.commit
+      inboxOpt = lookup.find(_._1 == clientId.value).map(_._2._2)
+      _ <- inboxOpt.match {
+        case Some(inbox) => inbox.offer(message).commit *> ZIO.unit
+        case None => ZIO.unit
+      }
+    } yield ()
+
 
   private def socket (id: String, callback : Callback):Socket[Any, Nothing, WebSocketFrame, WebSocketFrame] =
     val pf:PartialFunction[WebSocketFrame, ZStream[Any, Nothing, WebSocketFrame]] = {
@@ -55,8 +69,14 @@ class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) 
         for {
           _ <- Console.printLine("SERVER received: " ++ r.method.toString ++ " : " ++ r.path.toList.mkString)
           uuid <- ZIO.succeed(UUID.randomUUID())
-          _ <- lookupRef.update(x => x + (uuid.toString -> r) ).commit
-          x <- socket(uuid.toString, callback).toResponse
+          inbox <- TQueue.unbounded[String].commit
+          _ <- lookupRef.update(x => x + (uuid.toString -> (r, inbox)) ).commit
+          inboxStream = for {
+            msg <- ZStream.fromZIO(inbox.take.commit)
+            x <- ZStream.succeed(WebSocketFrame.text(msg))
+          } yield x
+          commandStream = socket(uuid.toString, callback)
+          x <- commandStream.merge(Socket.fromStream(inboxStream)).toResponse
         } yield x
       case r =>
         for {
@@ -71,7 +91,7 @@ class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) 
   def getHost (clientId:ClientId) =
     for {
       req <- lookupRef.get.commit.map( _.get(clientId.value))
-      host <- req.flatMap(_.host).map(_.toString).getOrElse("<nohost>") |> ZIO.succeed
+      host <- req.flatMap(_._1.host).map(_.toString).getOrElse("<nohost>") |> ZIO.succeed
       x <- host |> ZIO.succeed
     } yield x
 }

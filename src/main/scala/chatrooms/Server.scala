@@ -26,6 +26,8 @@ import chatrooms.domain.ServerState
 import chatrooms.domain.Client
 import chatrooms.domain.SEAlreadyJoined
 import chatrooms.domain.UserName
+import chatrooms.domain.SendDirectMessage
+import chatrooms.domain.SMDirectMessage
 
 case class ServerConfig(port:Int)
 
@@ -42,8 +44,21 @@ object Server extends ZIOAppDefault:
     case JoinRoom(roomName) => for {
       c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("joinRoom").encode))
     } yield c
+    case SendDirectMessage(to, msg) => for {
+      _ <- ZStream.fromZIO( for {
+        server <- ZIO.service[SocketServer]
+        state <- state.get.commit
+        receiverClientId = state.clients.find(_._2.name == to).map(_._2.id)
+        from = state.clients.find(_._2.id == clientId).map(_._2.name)
+        _ <- zio.Console.printLine("SendDirectMessage " ++ (receiverClientId, from).toString).ignore
+        _ <- (from, receiverClientId).match {
+          case (Some(f), Some(id)) => server.sendTo(id, SMDirectMessage(f, msg).encode).ignore
+          case _ => ZIO.unit
+        }
+      } yield ())
+      c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("sendDirectMessage").encode))
+    } yield c
     case Join(userName) => for {
-
       msg <- ZStream.fromZIO(state.modify(join(_, userName, clientId)).commit)
       c <- ZStream.succeed(WebSocketFrame.text(msg.encode))
     } yield c

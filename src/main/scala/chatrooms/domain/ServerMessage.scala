@@ -40,6 +40,7 @@ final case class SMError(error:ServerError) extends ServerMessage
 final case class Acknowledge(command:String) extends ServerMessage
 final case class AllRoomNames(roomNames:List[RoomName]) extends ServerMessage
 final case class AllRoomMembers(roomName:RoomName, members:List[ClientId]) extends ServerMessage
+final case class SMDirectMessage(from:UserName, txt:String) extends ServerMessage
 
 object ServerMessageEncoder {
   def encode (c:ServerMessage):String = c.match {
@@ -47,6 +48,7 @@ object ServerMessageEncoder {
     case Acknowledge(name) => ":acknowledge " ++ name
     case AllRoomNames(names) => ":allRoomNames " ++ names.mkString(",")
     case AllRoomMembers(roomName:RoomName, members: List[ClientId]) => ":allRoomMembers " ++ roomName.value ++ " " ++ members.mkString(",")
+    case SMDirectMessage(from, txt) => ":directMessage " ++ from.value ++ " " ++ txt
   }
 }
 
@@ -71,6 +73,14 @@ object ServerMessageParser {
 
     go(List.empty, false)
 
+  val directMessageParser: Parsley[SMDirectMessage] = for {
+    _ <- attempt(string(":directMessage"))
+    _ <- char(' ')
+    userName <- UserName.parser
+    _ <- char(' ')
+    msg <- many(noneOf('\n'))
+    x <- Parsley.pure(SMDirectMessage(userName, msg.mkString))
+  } yield x
 
   val allRoomNamesParser: Parsley[AllRoomNames] = for
     _ <- attempt(string(":allRoomNames"))
@@ -123,7 +133,12 @@ object ServerMessageParser {
 
 
   val parser: Parsley[ServerMessage] = for {
-    c <- acknowledgeParser <|> allRoomNamesParser <|> allRoomMembersParser <|> errorParser
+    c <-
+      acknowledgeParser
+      <|> allRoomNamesParser
+      <|> allRoomMembersParser
+      <|> errorParser
+      <|> directMessageParser
     _ <- eof
   } yield c
 }
