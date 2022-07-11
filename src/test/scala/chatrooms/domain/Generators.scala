@@ -13,14 +13,14 @@ object Generators {
   def command: Gen[Random with Sized, Command] =
     val txtGen = Gen.string1(Gen.alphaNumericChar.filter(c => c != '\n'))
     Gen.oneOf(
-      roomName.map(JoinRoom(_)),
-      roomName.map(LeaveRoom(_)),
-      roomName.zip(txtGen).map(SendText.apply),
-      roomName.map(SendPing(_)),
-      roomName.map(ListRoomMembers(_)),
-      userName.map(Join(_)),
-      userName.zip(message).map(SendDirectMessage.apply),
-      Gen.const(ListRooms()),
+      roomName.map(Command.JoinRoom(_)),
+      roomName.map(Command.LeaveRoom(_)),
+      roomName.zip(txtGen).map(Command.SendText.apply),
+      roomName.map(Command.SendPing(_)),
+      roomName.map(Command.ListRoomMembers(_)),
+      userName.map(Command.Join(_)),
+      userName.zip(message).map(Command.SendDirectMessage.apply),
+      Gen.const(Command.ListRooms()),
     )
   def serverMessage: Gen[Random with Sized, ServerMessage] =
     val errorGen = Gen.oneOf(Gen.const(SEAlreadyJoined()))

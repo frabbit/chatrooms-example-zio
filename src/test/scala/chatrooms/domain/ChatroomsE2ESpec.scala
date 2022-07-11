@@ -110,7 +110,7 @@ def fullSpec = suite("ChatroomsE2E")(
     withOneClient("Tom") { (client, queue) =>
       for {
         _ <- sendAndWait(client.send, queue,
-          Some(Join(UserName("Pim"))),
+          Some(Command.Join(UserName("Pim"))),
           List(ServerMessageFor(client.name, Acknowledge("join"))))
         _ <- sendOnly(client.send, None)
       } yield ()
@@ -121,10 +121,10 @@ def fullSpec = suite("ChatroomsE2E")(
     withOneClient("Tom") { (client, queue) =>
       for {
         _ <- sendAndWait(client.send, queue,
-          Some(Join(UserName(client.name))),
+          Some(Command.Join(UserName(client.name))),
           List(ServerMessageFor(client.name, Acknowledge("join"))))
         _ <- sendAndWait(client.send, queue,
-          Some(Join(UserName(client.name))),
+          Some(Command.Join(UserName(client.name))),
           List(ServerMessageFor(client.name, SMError(SEAlreadyJoined()))))
 
         _ <- sendOnly(client.send, None)
@@ -136,10 +136,10 @@ def fullSpec = suite("ChatroomsE2E")(
     withTwoClients("Tom", "Abe") { (clientA, clientB, queue) =>
       for {
         _ <- sendAndWait(clientA.send, queue,
-          Some(Join(UserName(clientA.name))),
+          Some(Command.Join(UserName(clientA.name))),
           List(ServerMessageFor(clientA.name, Acknowledge("join"))))
         _ <- sendAndWait(clientB.send, queue,
-          Some(Join(UserName(clientA.name))),
+          Some(Command.Join(UserName(clientA.name))),
           List(ServerMessageFor(clientB.name, SMError(SEAlreadyJoined()))))
         _ <- sendOnly(clientA.send, None)
         _ <- sendOnly(clientB.send, None)
@@ -167,12 +167,12 @@ object ChatroomsE2ESpec extends ZIOSpecDefault {
 object Api {
   def join (c:ClientHandle, queue:MsgQueue) =
     sendAndWait(c.send, queue,
-          Some(Join(UserName(c.name))),
+          Some(Command.Join(UserName(c.name))),
           List(ServerMessageFor(c.name, Acknowledge("join"))))
 
   def sendAndReceiveDirectMessage (sender:ClientHandle, receiver:ClientHandle, queue:MsgQueue, msg:String) =
     sendAndWait(sender.send, queue,
-          Some(SendDirectMessage(UserName(receiver.name), msg)),
+          Some(Command.SendDirectMessage(UserName(receiver.name), msg)),
           List(
             ServerMessageFor(sender.name, Acknowledge("sendDirectMessage")),
             ServerMessageFor(receiver.name, SMDirectMessage(UserName(sender.name), msg ))

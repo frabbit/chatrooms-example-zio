@@ -9,88 +9,78 @@ sealed trait Command {
   def encode = CommandEncoder.encode(this)
 }
 
-final case class JoinRoom(name:RoomName) extends Command
-final case class LeaveRoom(name:RoomName) extends Command
-final case class SendText(name:RoomName, txt:String) extends Command
-final case class SendPing(name:RoomName) extends Command
-final case class ListRooms() extends Command
-final case class ListRoomMembers(name:RoomName) extends Command
-final case class Join(name:UserName) extends Command
-final case class SendDirectMessage(to:UserName, txt:String) extends Command
-
 object CommandEncoder {
   def encode (c:Command):String = c.match {
-    case JoinRoom(name) => ":joinRoom " ++ name.value
-    case LeaveRoom(name) => ":leaveRoom " ++ name.value
-    case ListRoomMembers(name) => ":listRoomMembers " ++ name.value
-    case ListRooms() => ":listRooms"
-    case SendText(r, t) => ":sendText " ++ r.value ++ " " ++ t
-    case Join(name) => ":join " ++ name.value
-    case SendPing(r) => ":sendPing " ++ r.value
-    case SendDirectMessage(to, txt) => ":sendDirectMessage " ++ to.value ++ " " ++ txt
+    case Command.JoinRoom(name) => ":joinRoom " ++ name.value
+    case Command.LeaveRoom(name) => ":leaveRoom " ++ name.value
+    case Command.ListRoomMembers(name) => ":listRoomMembers " ++ name.value
+    case Command.ListRooms() => ":listRooms"
+    case Command.SendText(r, t) => ":sendText " ++ r.value ++ " " ++ t
+    case Command.Join(name) => ":join " ++ name.value
+    case Command.SendPing(r) => ":sendPing " ++ r.value
+    case Command.SendDirectMessage(to, txt) => ":sendDirectMessage " ++ to.value ++ " " ++ txt
   }
 }
 
-
 object CommandParser {
-  val listRoomMembersParser: Parsley[ListRoomMembers] = for {
+  val listRoomMembersParser: Parsley[Command.ListRoomMembers] = for {
     _ <- attempt(string(":listRoomMembers"))
     _ <- char(' ')
     roomName <- roomNameParser
-    x <- Parsley.pure(ListRoomMembers(roomName))
+    x <- Parsley.pure(Command.ListRoomMembers(roomName))
   } yield x
 
-  val listRoomsParser: Parsley[ListRooms] = for {
+  val listRoomsParser: Parsley[Command.ListRooms] = for {
     _ <- attempt(string(":listRooms"))
-    x <- Parsley.pure(ListRooms())
+    x <- Parsley.pure(Command.ListRooms())
   } yield x
 
-  val joinParser: Parsley[Join] = for {
+  val joinParser: Parsley[Command.Join] = for {
     _ <- attempt(string(":join"))
     _ <- char(' ')
     userName <- UserName.parser
-    x <- Parsley.pure(Join(userName))
+    x <- Parsley.pure(Command.Join(userName))
   } yield x
 
-  val sendDirectMessageParser: Parsley[SendDirectMessage] = for {
+  val sendDirectMessageParser: Parsley[Command.SendDirectMessage] = for {
     _ <- attempt(string(":sendDirectMessage"))
     _ <- char(' ')
     userName <- UserName.parser
     _ <- char(' ')
     msg <- many(noneOf('\n'))
-    x <- Parsley.pure(SendDirectMessage(userName, msg.mkString))
+    x <- Parsley.pure(Command.SendDirectMessage(userName, msg.mkString))
   } yield x
 
-  val sendPingParser: Parsley[SendPing] = for {
+  val sendPingParser: Parsley[Command.SendPing] = for {
     _ <- attempt(string(":sendPing"))
     _ <- char(' ')
     roomName <- roomNameParser
-    x <- Parsley.pure(SendPing(roomName))
+    x <- Parsley.pure(Command.SendPing(roomName))
   } yield x
 
-  val sendTextParser: Parsley[SendText] = for {
+  val sendTextParser: Parsley[Command.SendText] = for {
     _ <- attempt(string(":sendText"))
     _ <- char(' ')
     roomName <- roomNameParser
     _ <- char(' ')
     txt <- some(noneOf(' ', '\n'))
-    x <- Parsley.pure(SendText(roomName, txt.mkString))
+    x <- Parsley.pure(Command.SendText(roomName, txt.mkString))
   } yield x
 
-  val joinRoomParser: Parsley[JoinRoom] = for {
+  val joinRoomParser: Parsley[Command.JoinRoom] = for {
     _ <- attempt(string(":joinRoom"))
     _ <- char(' ')
     roomName <- roomNameParser
-    x <- Parsley.pure(JoinRoom(roomName))
+    x <- Parsley.pure(Command.JoinRoom(roomName))
   } yield x
 
   val roomNameParser = RoomName.parser
 
-  val leaveRoomParser: Parsley[LeaveRoom] = for {
+  val leaveRoomParser: Parsley[Command.LeaveRoom] = for {
     _ <- attempt(string(":leaveRoom"))
     _ <- char(' ')
     roomName <- roomNameParser
-    x <- Parsley.pure(LeaveRoom(roomName))
+    x <- Parsley.pure(Command.LeaveRoom(roomName))
   } yield x
 
   val parser: Parsley[Command] = for {
@@ -101,5 +91,14 @@ object CommandParser {
 
 object Command {
   def parse (s:String):Option[Command] = CommandParser.parser.parse(s).toOption
+
+  final case class JoinRoom(name:RoomName) extends Command
+  final case class LeaveRoom(name:RoomName) extends Command
+  final case class SendText(name:RoomName, txt:String) extends Command
+  final case class SendPing(name:RoomName) extends Command
+  final case class ListRooms() extends Command
+  final case class ListRoomMembers(name:RoomName) extends Command
+  final case class Join(name:UserName) extends Command
+  final case class SendDirectMessage(to:UserName, txt:String) extends Command
 }
 

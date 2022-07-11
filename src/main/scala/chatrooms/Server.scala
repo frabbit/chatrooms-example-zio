@@ -17,16 +17,12 @@ import chatrooms.domain.{Callback, CallbackE}
 import zio.ZLayer
 import zio.Scope
 import chatrooms.domain.Command
-import chatrooms.domain.JoinRoom.apply
 import chatrooms.domain.Acknowledge
 import chatrooms.domain.SMError
-import chatrooms.domain.JoinRoom
-import chatrooms.domain.Join
 import chatrooms.domain.ServerState
 import chatrooms.domain.Client
 import chatrooms.domain.SEAlreadyJoined
 import chatrooms.domain.UserName
-import chatrooms.domain.SendDirectMessage
 import chatrooms.domain.SMDirectMessage
 import chatrooms.usecases.SendDirectMessage as SendDirectMessageUC
 import chatrooms.usecases.SendDirectMessageLive
@@ -43,17 +39,17 @@ def join (s:ServerState, name:UserName, clientId:ClientId) =
 object Server extends ZIOAppDefault:
 
   def handleCommand (cmd:Command, clientId:ClientId) = cmd.match {
-    case JoinRoom(roomName) => for {
+    case Command.JoinRoom(roomName) => for {
       c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("joinRoom").encode))
     } yield c
-    case SendDirectMessage(to, msg) => for {
+    case Command.SendDirectMessage(to, msg) => for {
       _ <- ZStream.fromZIO( for {
         useCase <- ZIO.service[SendDirectMessageUC]
         c <- useCase.sendDirectMessage(clientId, to, msg)
       } yield c)
       c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("sendDirectMessage").encode))
     } yield c
-    case Join(userName) => for {
+    case Command.Join(userName) => for {
       state <- ZStream.fromZIO(ZIO.service[TRef[ServerState]])
       msg <- ZStream.fromZIO(state.modify(join(_, userName, clientId)).commit)
       c <- ZStream.succeed(WebSocketFrame.text(msg.encode))
