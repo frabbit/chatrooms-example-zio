@@ -24,9 +24,6 @@ import zhttp.service.Logging
 import zhttp.service.EventLoopGroup
 import zhttp.service.server.ServerChannelFactory
 
-
-case class SocketServerConfig(port: Int)
-
 type CallbackE[E] = PartialFunction[(ClientId, WebSocketFrame), ZStream[Any & E, Nothing, WebSocketFrame]]
 
 type Callback = CallbackE[Any]
@@ -108,9 +105,6 @@ object SocketServer {
     s <- ZIO.service[SocketServer]
     x <- s.getHost(clientId)
   } yield x
-
-  def liveConfig:ZLayer[Any, Nothing, SocketServerConfig] = ZLayer.succeed(SocketServerConfig(8092))
-  def liveConfigWithPort (port:Int):ZLayer[Any, Nothing, SocketServerConfig] = ZLayer.succeed(SocketServerConfig(port))
 
   def live:ZLayer[SocketServerConfig, Nothing, SocketServer] = for {
     ref <- ZLayer.fromZIO(TRef.makeCommit[RequestLookup](Map()))

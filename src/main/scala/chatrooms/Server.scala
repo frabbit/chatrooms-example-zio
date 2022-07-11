@@ -24,6 +24,8 @@ import chatrooms.usecases.SendDirectMessage
 import chatrooms.usecases.SendDirectMessageLive
 import chatrooms.domain.ServerMessage
 import chatrooms.domain.ServerError
+import chatrooms.domain.SocketServerConfig.apply
+import chatrooms.domain.SocketServerConfig
 
 case class ServerConfig(port:Int)
 
@@ -67,7 +69,7 @@ object Server extends ZIOAppDefault:
   }
 
   def mkLayers (cfg:ServerConfig) = (
-    SocketServer.liveConfigWithPort(cfg.port)
+    SocketServerConfig.withPortLayer(cfg.port)
     >+> ZLayer.fromZIO(TRef.make[ServerState](ServerState.empty()).commit)
     >+> SocketServer.live
     >+> SendDirectMessageLive.layer
