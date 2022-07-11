@@ -111,7 +111,7 @@ def fullSpec = suite("ChatroomsE2E")(
       for {
         _ <- sendAndWait(client.send, queue,
           Some(Command.Join(UserName("Pim"))),
-          List(ServerMessageFor(client.name, Acknowledge("join"))))
+          List(ServerMessageFor(client.name, ServerMessage.Acknowledge("join"))))
         _ <- sendOnly(client.send, None)
       } yield ()
     }
@@ -122,10 +122,10 @@ def fullSpec = suite("ChatroomsE2E")(
       for {
         _ <- sendAndWait(client.send, queue,
           Some(Command.Join(UserName(client.name))),
-          List(ServerMessageFor(client.name, Acknowledge("join"))))
+          List(ServerMessageFor(client.name, ServerMessage.Acknowledge("join"))))
         _ <- sendAndWait(client.send, queue,
           Some(Command.Join(UserName(client.name))),
-          List(ServerMessageFor(client.name, SMError(SEAlreadyJoined()))))
+          List(ServerMessageFor(client.name, ServerMessage.Error(ServerError.AlreadyJoined()))))
 
         _ <- sendOnly(client.send, None)
       } yield ()
@@ -137,10 +137,10 @@ def fullSpec = suite("ChatroomsE2E")(
       for {
         _ <- sendAndWait(clientA.send, queue,
           Some(Command.Join(UserName(clientA.name))),
-          List(ServerMessageFor(clientA.name, Acknowledge("join"))))
+          List(ServerMessageFor(clientA.name, ServerMessage.Acknowledge("join"))))
         _ <- sendAndWait(clientB.send, queue,
           Some(Command.Join(UserName(clientA.name))),
-          List(ServerMessageFor(clientB.name, SMError(SEAlreadyJoined()))))
+          List(ServerMessageFor(clientB.name, ServerMessage.Error(ServerError.AlreadyJoined()))))
         _ <- sendOnly(clientA.send, None)
         _ <- sendOnly(clientB.send, None)
       } yield ()
@@ -168,14 +168,14 @@ object Api {
   def join (c:ClientHandle, queue:MsgQueue) =
     sendAndWait(c.send, queue,
           Some(Command.Join(UserName(c.name))),
-          List(ServerMessageFor(c.name, Acknowledge("join"))))
+          List(ServerMessageFor(c.name, ServerMessage.Acknowledge("join"))))
 
   def sendAndReceiveDirectMessage (sender:ClientHandle, receiver:ClientHandle, queue:MsgQueue, msg:String) =
     sendAndWait(sender.send, queue,
           Some(Command.SendDirectMessage(UserName(receiver.name), msg)),
           List(
-            ServerMessageFor(sender.name, Acknowledge("sendDirectMessage")),
-            ServerMessageFor(receiver.name, SMDirectMessage(UserName(sender.name), msg ))
+            ServerMessageFor(sender.name, ServerMessage.Acknowledge("sendDirectMessage")),
+            ServerMessageFor(receiver.name, ServerMessage.DirectMessage(UserName(sender.name), msg ))
           )
     )
 

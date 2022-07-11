@@ -23,15 +23,15 @@ object Generators {
       Gen.const(Command.ListRooms()),
     )
   def serverMessage: Gen[Random with Sized, ServerMessage] =
-    val errorGen = Gen.oneOf(Gen.const(SEAlreadyJoined()))
+    val errorGen = Gen.oneOf(Gen.const(ServerError.AlreadyJoined()))
     val cmdGen = Gen.string1(Gen.alphaNumericChar.filter(c => c != '\n'))
     val clientIdList = Gen.listOfBounded(1, 30)(clientId)
     val roomNameList = Gen.listOfBounded(0, 50)(roomName)
     Gen.oneOf(
-      errorGen.map(SMError(_)),
-      cmdGen.map(Acknowledge(_)),
-      roomNameList.map(AllRoomNames(_)),
-      roomName.zip(clientIdList).map(AllRoomMembers.apply),
-      userName.zip(message).map(SMDirectMessage.apply),
+      errorGen.map(ServerMessage.Error(_)),
+      cmdGen.map(ServerMessage.Acknowledge(_)),
+      roomNameList.map(ServerMessage.AllRoomNames(_)),
+      roomName.zip(clientIdList).map(ServerMessage.AllRoomMembers.apply),
+      userName.zip(message).map(ServerMessage.DirectMessage.apply),
     )
 }

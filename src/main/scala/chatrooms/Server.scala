@@ -17,15 +17,13 @@ import chatrooms.domain.{Callback, CallbackE}
 import zio.ZLayer
 import zio.Scope
 import chatrooms.domain.Command
-import chatrooms.domain.Acknowledge
-import chatrooms.domain.SMError
 import chatrooms.domain.ServerState
 import chatrooms.domain.Client
-import chatrooms.domain.SEAlreadyJoined
 import chatrooms.domain.UserName
-import chatrooms.domain.SMDirectMessage
 import chatrooms.usecases.SendDirectMessage as SendDirectMessageUC
 import chatrooms.usecases.SendDirectMessageLive
+import chatrooms.domain.ServerMessage
+import chatrooms.domain.ServerError
 
 case class ServerConfig(port:Int)
 
@@ -33,21 +31,21 @@ def join (s:ServerState, name:UserName, clientId:ClientId) =
 
   val has = s.clients.exists((_, c) => c.id == clientId || c.name == name)
   val s1 = if has then s else s.addClient(Client(clientId, name))
-  var response = if has then chatrooms.domain.SMError(SEAlreadyJoined()) else Acknowledge("join")
+  var response = if has then ServerMessage.Error(ServerError.AlreadyJoined()) else ServerMessage.Acknowledge("join")
   println((s, s1).toString)
   (response, s1)
 object Server extends ZIOAppDefault:
 
   def handleCommand (cmd:Command, clientId:ClientId) = cmd.match {
     case Command.JoinRoom(roomName) => for {
-      c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("joinRoom").encode))
+      c <- ZStream.succeed(WebSocketFrame.text(ServerMessage.Acknowledge("joinRoom").encode))
     } yield c
     case Command.SendDirectMessage(to, msg) => for {
       _ <- ZStream.fromZIO( for {
         useCase <- ZIO.service[SendDirectMessageUC]
         c <- useCase.sendDirectMessage(clientId, to, msg)
       } yield c)
-      c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("sendDirectMessage").encode))
+      c <- ZStream.succeed(WebSocketFrame.text(ServerMessage.Acknowledge("sendDirectMessage").encode))
     } yield c
     case Command.Join(userName) => for {
       state <- ZStream.fromZIO(ZIO.service[TRef[ServerState]])

@@ -4,9 +4,9 @@ import zio.*
 import zio.stm.TRef
 import chatrooms.domain.ServerState
 import chatrooms.domain.SocketServer
-import chatrooms.domain.SMDirectMessage
 import chatrooms.domain.ClientId
 import chatrooms.domain.UserName
+import chatrooms.domain.ServerMessage
 
 trait SendDirectMessage {
   def sendDirectMessage(from:ClientId, to:UserName, msg:String):ZIO[Any, Nothing, Unit]
@@ -20,7 +20,7 @@ final case class SendDirectMessageLive(stateRef:TRef[ServerState], server:Socket
         fromName = state.clients.find(_._2.id == from).map(_._2.name)
         _ <- zio.Console.printLine("SendDirectMessage " ++ (receiverClientId, fromName).toString).ignore
         _ <- (fromName, receiverClientId).match {
-          case (Some(f), Some(id)) => server.sendTo(id, SMDirectMessage(f, msg).encode).ignore
+          case (Some(f), Some(id)) => server.sendTo(id, ServerMessage.DirectMessage(f, msg).encode).ignore
           case _ => ZIO.unit
         }
       } yield ()
