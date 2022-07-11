@@ -9,7 +9,7 @@ import chatrooms.domain.UserName
 import chatrooms.domain.ServerMessage
 
 final case class SendDirectMessageLive(stateRef:TRef[ServerState], server:SocketServer) extends SendDirectMessage:
-  def sendDirectMessage(from:ClientId, to: UserName, msg: String):ZIO[Any, Nothing, ServerMessage] =
+  def run(from:ClientId, to: UserName, msg: String):ZIO[Any, Nothing, ServerMessage] =
     for {
         state <- stateRef.get.commit
         receiverClientId = state.clients.find(_._2.name == to).map(_._2.id)

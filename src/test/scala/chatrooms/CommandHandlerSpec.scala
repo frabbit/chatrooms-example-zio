@@ -14,23 +14,23 @@ import zio.ZLayer
 import chatrooms.usecases.MockSendDirectMessage
 import zhttp.socket.WebSocketFrame
 
+val name = UserName("Peter")
+val clientId = ClientId("abc")
+
 
 private val spec_ = suite("CommandHandlerSpec")(
   suite("handleCommand should")(
     test("call Join.join when provided a Join command") {
-      val name = UserName("Peter")
-      val mockJoin = MockJoin.Join(equalTo((ClientId("abc"), name)), value(ServerMessage.Acknowledge("join"))).toLayer
-
-      val app = CommandHandler.handleCommand(Command.Join(name), ClientId("abc")).runCollect.map(_.toList)
+      val mockJoin = MockJoin.Run(equalTo((clientId, name)), value(ServerMessage.Acknowledge("join"))).toLayer
+      val app = CommandHandler.handleCommand(Command.Join(name), clientId).runCollect.map(_.toList)
       val out = app.provideLayer(MockSendDirectMessage.empty >+> mockJoin >>> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List(WebSocketFrame.text(ServerMessage.Acknowledge("join").encode))))
     } +
     test("call SendDirectMessage.sendDirectMessage when provided a SendDirectMessage command") {
-      val name = UserName("Peter")
-      val mockSendDirectMessage = MockSendDirectMessage.SendDirectMessage(
-        equalTo((ClientId("abc"), name, "txt")), value(ServerMessage.Acknowledge("sendDirectMessage"))).toLayer
-
-      val app = CommandHandler.handleCommand(Command.SendDirectMessage(name, "txt"), ClientId("abc")).runCollect.map(_.toList)
+      val msg = "txt"
+      val mockSendDirectMessage = MockSendDirectMessage.Run(
+        equalTo((clientId, name, msg)), value(ServerMessage.Acknowledge("sendDirectMessage"))).toLayer
+      val app = CommandHandler.handleCommand(Command.SendDirectMessage(name, msg), clientId).runCollect.map(_.toList)
       val out = app.provideLayer(mockSendDirectMessage >+> MockJoin.empty >>> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List(WebSocketFrame.text(ServerMessage.Acknowledge("sendDirectMessage").encode))))
     }

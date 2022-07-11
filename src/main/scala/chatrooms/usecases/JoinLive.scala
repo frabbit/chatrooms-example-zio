@@ -20,7 +20,7 @@ final case class JoinLive(stateRef:TRef[ServerState], server:SocketServer) exten
     println((s, s1).toString)
     (response, s1)
 
-  def join(clientId:ClientId, name: UserName): ZIO[Any, Nothing, ServerMessage] =
+  def run(clientId:ClientId, name: UserName): ZIO[Any, Nothing, ServerMessage] =
     for {
       msg <- stateRef.modify(applyJoin(_, name, clientId)).commit
     } yield msg

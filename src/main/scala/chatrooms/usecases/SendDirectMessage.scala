@@ -9,10 +9,10 @@ import chatrooms.domain.UserName
 import chatrooms.domain.ServerMessage
 
 trait SendDirectMessage {
-  def sendDirectMessage(from:ClientId, to:UserName, msg:String):ZIO[Any, Nothing, ServerMessage]
+  def run(from:ClientId, to:UserName, msg:String):ZIO[Any, Nothing, ServerMessage]
 }
 
 object SendDirectMessage {
-  def sendDirectMessage(from:ClientId, to:UserName, msg:String):ZIO[SendDirectMessage, Nothing, ServerMessage] =
-    ZIO.serviceWithZIO[SendDirectMessage](_.sendDirectMessage(from, to, msg))
+  def run(from:ClientId, to:UserName, msg:String):ZIO[SendDirectMessage, Nothing, ServerMessage] =
+    ZIO.serviceWithZIO[SendDirectMessage](_.run(from, to, msg))
 }

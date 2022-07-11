@@ -22,11 +22,11 @@ final case class CommandHandlerLive(
       } yield c
       case Command.SendDirectMessage(to, msg) =>
         ZStream.fromZIO(
-          sendDirectMessage.sendDirectMessage(clientId, to, msg).map(_.encode).map(WebSocketFrame.text)
+          sendDirectMessage.run(clientId, to, msg).map(_.encode).map(WebSocketFrame.text)
         )
       case Command.Join(userName) =>
         ZStream.fromZIO(
-          join.join(clientId, userName).map(_.encode).map(WebSocketFrame.text)
+          join.run(clientId, userName).map(_.encode).map(WebSocketFrame.text)
         )
       case _ => ZStream.empty
     }

@@ -9,11 +9,11 @@ import chatrooms.domain.UserName
 import chatrooms.domain.ServerMessage
 
 trait Join {
-  def join(clientId:ClientId, name:UserName):ZIO[Any, Nothing, ServerMessage]
+  def run(clientId:ClientId, name:UserName):ZIO[Any, Nothing, ServerMessage]
 }
 
 object Join {
-  def join(clientId:ClientId, name:UserName):ZIO[Join, Nothing, ServerMessage] =
-    ZIO.serviceWithZIO[Join](_.join(clientId, name))
+  def run(clientId:ClientId, name:UserName):ZIO[Join, Nothing, ServerMessage] =
+    ZIO.serviceWithZIO[Join](_.run(clientId, name))
 }
 
