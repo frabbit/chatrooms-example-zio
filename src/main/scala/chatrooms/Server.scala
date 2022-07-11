@@ -28,6 +28,8 @@ import chatrooms.domain.SEAlreadyJoined
 import chatrooms.domain.UserName
 import chatrooms.domain.SendDirectMessage
 import chatrooms.domain.SMDirectMessage
+import chatrooms.usecases.SendDirectMessage as SendDirectMessageUC
+import chatrooms.usecases.SendDirectMessageLive
 
 case class ServerConfig(port:Int)
 
@@ -40,43 +42,42 @@ def join (s:ServerState, name:UserName, clientId:ClientId) =
   (response, s1)
 object Server extends ZIOAppDefault:
 
-  def handleCommand (cmd:Command, clientId:ClientId, state:TRef[ServerState]) = cmd.match {
+  def handleCommand (cmd:Command, clientId:ClientId) = cmd.match {
     case JoinRoom(roomName) => for {
       c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("joinRoom").encode))
     } yield c
     case SendDirectMessage(to, msg) => for {
       _ <- ZStream.fromZIO( for {
-        server <- ZIO.service[SocketServer]
-        state <- state.get.commit
-        receiverClientId = state.clients.find(_._2.name == to).map(_._2.id)
-        from = state.clients.find(_._2.id == clientId).map(_._2.name)
-        _ <- zio.Console.printLine("SendDirectMessage " ++ (receiverClientId, from).toString).ignore
-        _ <- (from, receiverClientId).match {
-          case (Some(f), Some(id)) => server.sendTo(id, SMDirectMessage(f, msg).encode).ignore
-          case _ => ZIO.unit
-        }
-      } yield ())
+        useCase <- ZIO.service[SendDirectMessageUC]
+        c <- useCase.sendDirectMessage(clientId, to, msg)
+      } yield c)
       c <- ZStream.succeed(WebSocketFrame.text(Acknowledge("sendDirectMessage").encode))
     } yield c
     case Join(userName) => for {
+      state <- ZStream.fromZIO(ZIO.service[TRef[ServerState]])
       msg <- ZStream.fromZIO(state.modify(join(_, userName, clientId)).commit)
       c <- ZStream.succeed(WebSocketFrame.text(msg.encode))
     } yield c
     case _ => ZStream.empty
   }
 
-  def onConnect (state:TRef[ServerState]):CallbackE[SocketServer] = {
+  def onConnect (state:TRef[ServerState]):CallbackE[SocketServer & SendDirectMessageUC & TRef[ServerState]] = {
       case x@(clientId, WebSocketFrame.Text(txt)) => for {
         _ <- ZStream.fromZIO(zio.Console.printLine("message received" ++ txt).ignore)
         x <- Command.parse(txt).match {
-          case Some(cmd) => handleCommand(cmd, clientId, state)
+          case Some(cmd) => handleCommand(cmd, clientId)
           case None =>
             ZStream.execute(zio.Console.printLine(s"Cannot parse Message from ${txt}".format(txt)).ignore)
         }
       } yield x
   }
 
-  def mkLayers (cfg:ServerConfig) = (SocketServer.liveConfigWithPort(cfg.port) >>> SocketServer.live).memoize
+  def mkLayers (cfg:ServerConfig) = (
+    SocketServer.liveConfigWithPort(cfg.port)
+    >+> ZLayer.fromZIO(TRef.make[ServerState](ServerState.empty()).commit)
+    >+> SocketServer.live
+    >+> SendDirectMessageLive.layer
+  ).memoize
 
 
   def app (cfg:ServerConfig): ZIO[Any, Nothing, Unit] = for {
