@@ -20,7 +20,7 @@ import chatrooms.domain.Command
 import chatrooms.domain.ServerState
 import chatrooms.domain.Client
 import chatrooms.domain.UserName
-import chatrooms.usecases.SendDirectMessage as SendDirectMessageUC
+import chatrooms.usecases.SendDirectMessage
 import chatrooms.usecases.SendDirectMessageLive
 import chatrooms.domain.ServerMessage
 import chatrooms.domain.ServerError
@@ -42,7 +42,7 @@ object Server extends ZIOAppDefault:
     } yield c
     case Command.SendDirectMessage(to, msg) => for {
       _ <- ZStream.fromZIO( for {
-        useCase <- ZIO.service[SendDirectMessageUC]
+        useCase <- ZIO.service[SendDirectMessage]
         c <- useCase.sendDirectMessage(clientId, to, msg)
       } yield c)
       c <- ZStream.succeed(WebSocketFrame.text(ServerMessage.Acknowledge("sendDirectMessage").encode))
@@ -55,7 +55,7 @@ object Server extends ZIOAppDefault:
     case _ => ZStream.empty
   }
 
-  def onConnect (state:TRef[ServerState]):CallbackE[SocketServer & SendDirectMessageUC & TRef[ServerState]] = {
+  def onConnect (state:TRef[ServerState]):CallbackE[SocketServer & SendDirectMessage & TRef[ServerState]] = {
       case x@(clientId, WebSocketFrame.Text(txt)) => for {
         _ <- ZStream.fromZIO(zio.Console.printLine("message received" ++ txt).ignore)
         x <- Command.parse(txt).match {
