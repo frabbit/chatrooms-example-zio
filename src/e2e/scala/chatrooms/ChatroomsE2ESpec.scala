@@ -1,4 +1,4 @@
-package chatrooms.domain
+package chatrooms
 
 import zio.test.TestAspect
 import zio.ZIO
@@ -12,6 +12,12 @@ import zio.Random
 import _root_.chatrooms.all.allSyntaxChatrooms
 import _root_.chatrooms.Server
 import _root_.chatrooms.ServerConfig
+import _root_.chatrooms.domain.ServerMessage
+import _root_.chatrooms.domain.ServerError
+import _root_.chatrooms.domain.Command
+import _root_.chatrooms.domain.CommandEncoder
+import _root_.chatrooms.domain.UserName
+
 import _root_.chatrooms.TestClient
 import _root_.chatrooms.Send
 import zio.stm.TQueue
