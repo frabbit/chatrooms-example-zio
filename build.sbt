@@ -14,9 +14,11 @@ val sttpzio  = "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio
 val zioTest    = "dev.zio" %% "zio-test"     % zioVersion % "test,e2e"
 val zioTestMagnolia    = "dev.zio" %% "zio-test-magnolia"     % zioVersion % "test,e2e"
 val zioTestSbt = "dev.zio" %% "zio-test-sbt" % zioVersion % "test,e2e"
+val zioMock = "dev.zio" %% "zio-mock" % "1.0.0-RC6"
 
 val zio = "dev.zio" %% "zio" % zioVersion
 val zioStreams = "dev.zio" %% "zio-streams" % zioVersion
+
 
 
 lazy val root = project
@@ -47,5 +49,6 @@ lazy val root = project
       zioTest,
       zioTestSbt,
       zioTestMagnolia,
+      zioMock,
     )
   )
