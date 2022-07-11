@@ -41,7 +41,6 @@ case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room])
       ServerState(clients, newRooms)
     }
   }
-
 }
 
 object ServerState {
