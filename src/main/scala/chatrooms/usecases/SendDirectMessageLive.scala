@@ -9,7 +9,7 @@ import chatrooms.domain.UserName
 import chatrooms.domain.ServerMessage
 
 final case class SendDirectMessageLive(stateRef:TRef[ServerState], server:SocketServer) extends SendDirectMessage:
-  def sendDirectMessage(from:ClientId, to: UserName, msg: String):ZIO[Any, Nothing, Unit] =
+  def sendDirectMessage(from:ClientId, to: UserName, msg: String):ZIO[Any, Nothing, ServerMessage] =
     for {
         state <- stateRef.get.commit
         receiverClientId = state.clients.find(_._2.name == to).map(_._2.id)
@@ -19,7 +19,8 @@ final case class SendDirectMessageLive(stateRef:TRef[ServerState], server:Socket
           case (Some(f), Some(id)) => server.sendTo(id, ServerMessage.DirectMessage(f, msg).encode).ignore
           case _ => ZIO.unit
         }
-      } yield ()
+
+      } yield ServerMessage.Acknowledge("sendDirectMessage")
 
 object SendDirectMessageLive:
   val layer:ZLayer[TRef[ServerState] & SocketServer, Nothing, SendDirectMessage] = ZLayer.fromFunction(SendDirectMessageLive.apply)

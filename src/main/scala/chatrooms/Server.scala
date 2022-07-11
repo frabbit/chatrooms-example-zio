@@ -26,42 +26,18 @@ import chatrooms.domain.ServerMessage
 import chatrooms.domain.ServerError
 import chatrooms.domain.SocketServerConfig.apply
 import chatrooms.domain.SocketServerConfig
+import chatrooms.usecases.Join
+import chatrooms.usecases.JoinLive
 
 case class ServerConfig(port:Int)
 
-def join (s:ServerState, name:UserName, clientId:ClientId) =
-
-  val has = s.clients.exists((_, c) => c.id == clientId || c.name == name)
-  val s1 = if has then s else s.addClient(Client(clientId, name))
-  var response = if has then ServerMessage.Error(ServerError.AlreadyJoined()) else ServerMessage.Acknowledge("join")
-  println((s, s1).toString)
-  (response, s1)
 object Server extends ZIOAppDefault:
 
-  def handleCommand (cmd:Command, clientId:ClientId) = cmd.match {
-    case Command.JoinRoom(roomName) => for {
-      c <- ZStream.succeed(WebSocketFrame.text(ServerMessage.Acknowledge("joinRoom").encode))
-    } yield c
-    case Command.SendDirectMessage(to, msg) => for {
-      _ <- ZStream.fromZIO( for {
-        useCase <- ZIO.service[SendDirectMessage]
-        c <- useCase.sendDirectMessage(clientId, to, msg)
-      } yield c)
-      c <- ZStream.succeed(WebSocketFrame.text(ServerMessage.Acknowledge("sendDirectMessage").encode))
-    } yield c
-    case Command.Join(userName) => for {
-      state <- ZStream.fromZIO(ZIO.service[TRef[ServerState]])
-      msg <- ZStream.fromZIO(state.modify(join(_, userName, clientId)).commit)
-      c <- ZStream.succeed(WebSocketFrame.text(msg.encode))
-    } yield c
-    case _ => ZStream.empty
-  }
-
-  def onConnect (state:TRef[ServerState]):CallbackE[SocketServer & SendDirectMessage & TRef[ServerState]] = {
+  def onConnect (state:TRef[ServerState]):CallbackE[CommandHandler] = {
       case x@(clientId, WebSocketFrame.Text(txt)) => for {
         _ <- ZStream.fromZIO(zio.Console.printLine("message received" ++ txt).ignore)
         x <- Command.parse(txt).match {
-          case Some(cmd) => handleCommand(cmd, clientId)
+          case Some(cmd) => CommandHandler.handleCommand(cmd, clientId)
           case None =>
             ZStream.execute(zio.Console.printLine(s"Cannot parse Message from ${txt}".format(txt)).ignore)
         }
@@ -73,8 +49,9 @@ object Server extends ZIOAppDefault:
     >+> ZLayer.fromZIO(TRef.make[ServerState](ServerState.empty()).commit)
     >+> SocketServer.live
     >+> SendDirectMessageLive.layer
+    >+> JoinLive.layer
+    >+> CommandHandlerLive.layer
   ).memoize
-
 
   def app (cfg:ServerConfig): ZIO[Any, Nothing, Unit] = for {
     map <- TRef.make(Map()).commit
