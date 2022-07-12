@@ -146,7 +146,7 @@ def fullSpec = suite("ChatroomsE2E")(
           List(ServerMessageFor(clientA.name, ServerMessage.Acknowledge("join"))))
         _ <- sendAndWait(clientB.send, queue,
           Some(Command.Join(UserName(clientA.name))),
-          List(ServerMessageFor(clientB.name, ServerMessage.Error(ServerError.AlreadyJoined()))))
+          List(ServerMessageFor(clientB.name, ServerMessage.Error(ServerError.UserNameTaken))))
         _ <- sendOnly(clientA.send, None)
         _ <- sendOnly(clientB.send, None)
       } yield ()

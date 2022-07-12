@@ -1,5 +1,9 @@
 package chatrooms.domain
 
+import zio.*
+
+
+
 case class Client(id:ClientId, name:UserName)
 
 case class Room(name:RoomName, clients: Set[ClientId]) {
@@ -8,8 +12,13 @@ case class Room(name:RoomName, clients: Set[ClientId]) {
 }
 
 case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room]) {
-  def addClient (client:Client):ServerState = this.match {
-    case ServerState(clients, rooms) => ServerState(clients + (client.id -> client), rooms)
+  def addClient (client:Client):Either[ServerState.ClientExists | ServerState.UserNameTaken, ServerState] = this.match {
+    case ServerState(clients, rooms) =>
+      val clientExists = clients.exists(_._1 == client.id)
+      lazy val nameExists = clients.exists(_._2.name == client.name)
+      if clientExists then Left(ServerState.ClientExists)
+      else if nameExists then Left(ServerState.UserNameTaken)
+      else Right(ServerState(clients + (client.id -> client), rooms))
   }
 
   def getClientIdsOfRoom (roomName:RoomName): Option[Set[ClientId]] =
@@ -44,5 +53,13 @@ case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room])
 }
 
 object ServerState {
+  case object ClientExists {}
+  type ClientExists = ClientExists.type
+
+  case object UserNameTaken {}
+  type UserNameTaken = UserNameTaken.type
+
+  case object ClientNotFound {}
+  type ClientNotFound = ClientNotFound.type
   def empty () = ServerState(Map(), Map())
 }

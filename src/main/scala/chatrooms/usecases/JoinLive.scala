@@ -12,17 +12,15 @@ import chatrooms.domain.Client
 import chatrooms.domain.ServerError
 
 final case class JoinLive(stateRef:TRef[ServerState], server:SocketServer) extends Join:
-  def applyJoin (s:ServerState, name:UserName, clientId:ClientId) =
-
-    val has = s.clients.exists((_, c) => c.id == clientId || c.name == name)
-    val s1 = if has then s else s.addClient(Client(clientId, name))
-    var response = if has then ServerMessage.Error(ServerError.AlreadyJoined()) else ServerMessage.Acknowledge("join")
-    println((s, s1).toString)
-    (response, s1)
-
+  def map (s:ServerState, name:UserName, clientId:ClientId):(ServerMessage, ServerState) =
+    s.addClient(Client(clientId, name)).match {
+      case Right(s1) => (ServerMessage.Acknowledge("join"), s1)
+      case Left(ServerState.ClientExists) => (ServerMessage.Error(ServerError.AlreadyJoined()), s)
+      case Left(ServerState.UserNameTaken) => (ServerMessage.Error(ServerError.UserNameTaken), s)
+    }
   def run(clientId:ClientId, name: UserName): ZIO[Any, Nothing, ServerMessage] =
     for {
-      msg <- stateRef.modify(applyJoin(_, name, clientId)).commit
+      msg <- stateRef.modify(map(_, name, clientId)).commit
     } yield msg
 
 

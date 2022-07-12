@@ -22,22 +22,22 @@ private def spec_ = suite("ServerState")(
         check(Generators.client) { client =>
           val initialState = ServerState.empty()
           val expectedState = ServerState(Map() + (client.id -> client), Map())
-          assert(initialState.addClient(client))(equalTo(expectedState))
+          assert(initialState.addClient(client))(equalTo(Right(expectedState)))
         }
       }
       +
       test("do nothing when client was already added") {
         check(Generators.client) { client =>
-          val initialState = ServerState.empty().addClient(client)
+          val Right(initialState) = ServerState.empty().addClient(client)
           val expectedState = initialState
-          assert(initialState.addClient(client))(equalTo(expectedState))
+          assert(initialState.addClient(client))(equalTo(Left(ServerState.ClientExists)))
         }
       }
     ) +
      suite("getRoomNamesOfClient should") (
       test("return an empty list when client has not joined any rooms") {
         check(Generators.client) { client =>
-          val state = ServerState.empty().addClient(client)
+          val state = ServerState.empty().addClient(client).getOrElse(ServerState.empty())
           assert(state.getRoomNamesOfClient(client))(equalTo(Set()))
         }
       } +
