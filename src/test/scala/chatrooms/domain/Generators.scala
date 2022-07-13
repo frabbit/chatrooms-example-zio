@@ -20,7 +20,7 @@ object Generators {
       roomName.map(Command.ListRoomMembers(_)),
       userName.map(Command.Join(_)),
       userName.zip(message).map(Command.SendDirectMessage.apply),
-      Gen.const(Command.ListRooms()),
+      Gen.const(Command.ListRooms),
     )
   def serverMessage: Gen[Random with Sized, ServerMessage] =
     val errorGen = Gen.oneOf(Gen.const(ServerError.AlreadyJoined()), Gen.const(ServerError.UserNameTaken))
