@@ -28,6 +28,7 @@ import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import zio.Console.ConsoleLive
 import zio.Console
 import zio.ZLayer
+import chatrooms.utils.Ports
 
 
 type ClientName = String
@@ -40,8 +41,15 @@ type MsgQueue = TQueue[ServerMessageFor]
 
 case class ClientHandle (name:ClientName, send: Send[Command])
 
+def findPort:ZIO[Any, Nothing, Int] = for {
+  port <- Random.nextIntBetween(Ports.MIN_PORT_NUMBER, Ports.MAX_PORT_NUMBER + 1)
+  avail <- Ports.available(port)
+  _ <- ZIO.when(!avail)(zio.Console.printLine("port " ++ port.toString() ++ " not available").ignore)
+  x <- if avail then ZIO.succeed(port) else findPort
+} yield x
+
 def withServer [R, A, E](run: ServerConfig => ZIO[R, E, A]) = for {
-  port <- Random.nextIntBetween(1024, 60000)
+  port <- findPort
   cfg = ServerConfig(port)
   acquire =
     for
