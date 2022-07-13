@@ -11,7 +11,7 @@ import zio.stream.ZStream
 import chatrooms.domain.Client
 import chatrooms.domain.ServerError
 
-final case class JoinLive(stateRef:TRef[ServerState], server:SocketServer) extends Join:
+final case class JoinLive(stateRef:TRef[ServerState]) extends Join:
   def map (s:ServerState, name:UserName, clientId:ClientId):(ServerMessage, ServerState) =
     s.addClient(Client(clientId, name)).match {
       case Right(s1) => (ServerMessage.Acknowledge("join"), s1)
@@ -25,5 +25,5 @@ final case class JoinLive(stateRef:TRef[ServerState], server:SocketServer) exten
 
 
 object JoinLive:
-  val layer:ZLayer[TRef[ServerState] & SocketServer, Nothing, Join] = ZLayer.fromFunction(JoinLive.apply)
+  val layer:ZLayer[TRef[ServerState], Nothing, Join] = ZLayer.fromFunction(JoinLive.apply)
 

@@ -12,6 +12,7 @@ case class Room(name:RoomName, clients: Set[ClientId]) {
 }
 
 case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room]) {
+  def getClientIds ():Set[ClientId] = this.clients.keySet
   def addClient (client:Client):Either[ServerState.ClientExists | ServerState.UserNameTaken, ServerState] = this.match {
     case ServerState(clients, rooms) =>
       val clientExists = clients.exists(_._1 == client.id)

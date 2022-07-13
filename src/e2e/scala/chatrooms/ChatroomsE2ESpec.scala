@@ -132,34 +132,7 @@ def fullSpec = suite("ChatroomsE2E")(
         _ <- Api.exitClient(client)
       } yield ()
     }
-  }
-  +
-  test("joining should only work once") {
-    withOneClient("Tom") { (client, queue) =>
-      for {
-        _ <- Api.join(client, queue)
-        _ <- sendAndWait(client.send, queue,
-          Some(Command.Join(UserName(client.name))),
-          List(ServerMessageFor(client.name, ServerMessage.Error(ServerError.AlreadyJoined))))
-
-        _ <- Api.exitClient(client)
-      } yield ()
-    }
-  }
-  +
-  test("Joining of a second user joining with the same name should fail") {
-    withTwoClients("Tom", "Abe") { (clientA, clientB, queue) =>
-      for {
-        _ <- Api.join(clientA, queue)
-        _ <- sendAndWait(clientB.send, queue,
-          Some(Command.Join(UserName(clientA.name))),
-          List(ServerMessageFor(clientB.name, ServerMessage.Error(ServerError.UserNameTaken))))
-        _ <- Api.exitClient(clientA)
-        _ <- Api.exitClient(clientB)
-      } yield ()
-    }
-  }
-  +
+  } +
   test("sending direct messages should work") {
     withTwoClients("Tom", "Abe") { (clientA, clientB, queue) =>
       for {
