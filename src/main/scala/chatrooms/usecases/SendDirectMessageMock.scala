@@ -11,19 +11,19 @@ import chatrooms.domain.UserName
 import chatrooms.domain.ServerMessage
 import zio.stream.ZStream
 import chatrooms.domain.Client
-import chatrooms.usecases.Join
+import chatrooms.usecases.SendDirectMessage
 import chatrooms.domain.ServerError
 import zio.internal.stacktracer.Tracer
 
-object MockJoin extends Mock[Join]:
-  object Run extends Effect[(ClientId, UserName), Nothing, ServerMessage]
+object SendDirectMessageMock extends Mock[SendDirectMessage]:
+  object Run extends Effect[(ClientId, UserName, String), Nothing, ServerMessage]
 
-  val compose: URLayer[Proxy, Join] = {
+  val compose: URLayer[Proxy, SendDirectMessage] = {
     ZLayer.fromZIO(
       ZIO.service[Proxy]
       .map {proxy =>
-        new Join {
-            def run(clientId:ClientId, name:UserName):ZIO[Any, Nothing, ServerMessage] = proxy(Run, clientId, name)
+        new SendDirectMessage {
+            def run(from: ClientId, to: UserName, msg: String): ZIO[Any, Nothing, ServerMessage] = proxy(Run, from, to, msg)
         }
       }
     )
