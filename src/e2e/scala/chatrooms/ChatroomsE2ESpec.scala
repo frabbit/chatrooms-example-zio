@@ -122,6 +122,30 @@ def withTwoClients[R,E,A](nameA:ClientName, nameB:ClientName)(run:(ClientHandle,
     }
   server *> assertCompletesZIO
 
+def withFourClients[R,E,A](nameA:ClientName, nameB:ClientName, nameC:ClientName, nameD:ClientName)(run:(ClientHandle, ClientHandle, ClientHandle, ClientHandle, MsgQueue) => ZIO[R,E,A]) =
+  val server =
+    withServer { cfg =>
+      for {
+        queue <- TQueue.unbounded[ServerMessageFor].commit
+        a <- mkTestClient(nameA, queue, cfg)
+        b <- mkTestClient(nameB, queue, cfg)
+        c <- mkTestClient(nameC, queue, cfg)
+        d <- mkTestClient(nameD, queue, cfg)
+        _ <- run(
+          ClientHandle(nameA, a._1),
+          ClientHandle(nameB, b._1),
+          ClientHandle(nameC, c._1),
+          ClientHandle(nameD, d._1),
+          queue)
+        _ <- a._2.await
+        _ <- b._2.await
+        _ <- c._2.await
+        _ <- d._2.await
+        _ <- ZIO.sleep(400.milliseconds)
+      } yield ()
+    }
+  server *> assertCompletesZIO
+
 def fullSpec = suite("ChatroomsE2E")(
   test("joining should be acknowledged") {
     withOneClient("Tom") { (client, queue) =>
@@ -181,6 +205,19 @@ def fullSpec = suite("ChatroomsE2E")(
       } yield ()
     }
   }
+  +
+  test("sendMessageToRoom should send the message to all members of a room") {
+    withFourClients("Tom", "Jack", "Sarah", "Jane") { (clientA, clientB, clientC, clientD, queue) =>
+      val all = List(clientA, clientB, clientC, clientD)
+      for {
+        _ <- Api.joinAll(all, queue)
+        roomName = RoomName("myRoom")
+        _ <- Api.joinRoomAll(all, queue, roomName)
+        _ <- Api.sendMessageToRoom(clientA, all, queue, roomName, "hello world")
+        _ <- Api.exitAll(all)
+      } yield ()
+    }
+  }
 ).provide(AsyncHttpClientZioBackend.layer(), ZLayer.succeed(ConsoleLive)) @@ TestAspect.withLiveEnvironment @@ TestAspect.sequential
 
 
@@ -193,6 +230,15 @@ object ChatroomsE2ESpec extends ZIOSpecDefault {
 }
 
 object Api {
+  def joinAll (clients:List[ClientHandle], queue:MsgQueue) =
+    ZIO.collectAll(clients.map(Api.join(_, queue))) *> ZIO.unit
+
+  def exitAll (clients:List[ClientHandle]) =
+    ZIO.collectAll(clients.map(Api.exitClient(_))) *> ZIO.unit
+
+  def joinRoomAll (clients:List[ClientHandle], queue:MsgQueue, roomName:RoomName) =
+    ZIO.collectAll(clients.map(Api.joinRoom(_, queue, roomName))) *> ZIO.unit
+
   def join (c:ClientHandle, queue:MsgQueue) =
     sendAndWait(c.send, queue,
           Some(Command.Join(UserName(c.name))),
@@ -200,11 +246,16 @@ object Api {
 
   def sendAndReceiveDirectMessage (sender:ClientHandle, receiver:ClientHandle, queue:MsgQueue, msg:String) =
     sendAndWait(sender.send, queue,
-          Some(Command.SendDirectMessage(UserName(receiver.name), msg)),
-          List(
-            ServerMessageFor(sender.name, ServerMessage.Acknowledge("sendDirectMessage")),
-            ServerMessageFor(receiver.name, ServerMessage.DirectMessage(UserName(sender.name), msg ))
-          )
+      Some(Command.SendDirectMessage(UserName(receiver.name), msg)),
+      List(
+        ServerMessageFor(sender.name, ServerMessage.Acknowledge("sendDirectMessage")),
+        ServerMessageFor(receiver.name, ServerMessage.DirectMessage(UserName(sender.name), msg ))
+      )
+    )
+  def sendMessageToRoom (sender:ClientHandle, receivers:List[ClientHandle], queue:MsgQueue, roomName:RoomName, msg:String) =
+    sendAndWait(sender.send, queue,
+      Some(Command.SendMessageToRoom(roomName, msg)),
+      receivers.map(r => ServerMessageFor(r.name, ServerMessage.RoomMessage(UserName(sender.name), roomName, msg )))
     )
   def joinRoom (c:ClientHandle, queue: MsgQueue, roomName:RoomName) =
     sendAndWait(c.send, queue,

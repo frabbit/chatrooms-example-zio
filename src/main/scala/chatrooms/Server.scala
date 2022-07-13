@@ -20,10 +20,13 @@ import chatrooms.domain.Command
 import chatrooms.domain.ServerState
 import chatrooms.domain.Client
 import chatrooms.domain.UserName
+import chatrooms.domain.MessageServiceLive
+
 import chatrooms.usecases.SendDirectMessage
 import chatrooms.usecases.SendDirectMessageLive
 import chatrooms.usecases.JoinRoomLive
 import chatrooms.usecases.ListRoomMembersLive
+import chatrooms.domain.MessageServiceMock
 
 import chatrooms.domain.ServerMessage
 import chatrooms.domain.ServerError
@@ -31,6 +34,7 @@ import chatrooms.domain.SocketServerConfig.apply
 import chatrooms.domain.SocketServerConfig
 import chatrooms.usecases.Join
 import chatrooms.usecases.JoinLive
+import chatrooms.usecases.SendMessageToRoomLive
 
 case class ServerConfig(port:Int)
 
@@ -55,8 +59,9 @@ object Server extends ZIOAppDefault:
     >+> JoinLive.layer
     >+> JoinRoomLive.layer
     >+> ListRoomMembersLive.layer
+    >+> MessageServiceLive.layer
+    >+> SendMessageToRoomLive.layer
     >+> CommandHandlerLive.layer
-
   ).memoize
 
   def app (cfg:ServerConfig): ZIO[Any, Nothing, Unit] = for {

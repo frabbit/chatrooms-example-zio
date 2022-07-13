@@ -60,6 +60,7 @@ sealed trait ServerMessage {
 
 object ServerMessageEncoder {
   def encode (c:ServerMessage):String = c.match {
+    case ServerMessage.RoomMessage(from, roomName, txt) => ":roomMessage " ++ from.value ++ " " ++ roomName.value ++ " " ++ txt
     case ServerMessage.Error(error) => ":error " ++ error.encode
     case ServerMessage.Acknowledge(name) => ":acknowledge " ++ name
     case ServerMessage.AllRoomNames(names) => ":allRoomNames " ++ names.mkString(",")
@@ -98,6 +99,17 @@ object ServerMessageParser {
     x <- Parsley.pure(ServerMessage.DirectMessage(userName, msg.mkString))
   } yield x
 
+  val roomMessageParser: Parsley[ServerMessage.RoomMessage] = for {
+    _ <- attempt(string(":roomMessage"))
+    _ <- char(' ')
+    userName <- UserName.parser
+    _ <- char(' ')
+    roomName <- RoomName.parser
+    _ <- char(' ')
+    msg <- many(noneOf('\n'))
+    x <- Parsley.pure(ServerMessage.RoomMessage(userName, roomName, msg.mkString))
+  } yield x
+
   val allRoomNamesParser: Parsley[ServerMessage.AllRoomNames] = for
     _ <- attempt(string(":allRoomNames"))
     _ <- char(' ')
@@ -116,7 +128,6 @@ object ServerMessageParser {
 
   val uuidParser: Parsley[UUID] =
     for
-      //cc853903-8e2d-4890-936d-8c7314773a6c
       b1 <- C.manyN(8, Character.alphaNum)
       _ <- char('-')
       b2 <- C.manyN(4, Character.alphaNum)
@@ -155,6 +166,7 @@ object ServerMessageParser {
       <|> allRoomMembersParser
       <|> errorParser
       <|> directMessageParser
+      <|> roomMessageParser
     _ <- eof
   } yield c
 }
@@ -165,6 +177,7 @@ object ServerMessage {
   final case class Error(error:ServerError) extends ServerMessage
   final case class Acknowledge(command:String) extends ServerMessage
   final case class AllRoomNames(roomNames:List[RoomName]) extends ServerMessage
+  final case class RoomMessage(from:UserName, roomName:RoomName, txt:String) extends ServerMessage
   final case class AllRoomMembers(roomName:RoomName, members:Set[UserName]) extends ServerMessage
   final case class DirectMessage(from:UserName, txt:String) extends ServerMessage
 }

@@ -19,6 +19,7 @@ object Generators {
       roomName.map(Command.SendPing(_)),
       roomName.map(Command.ListRoomMembers(_)),
       userName.map(Command.Join(_)),
+      roomName.zip(message).map(Command.SendMessageToRoom.apply),
       userName.zip(message).map(Command.SendDirectMessage.apply),
       Gen.const(Command.ListRooms),
     )
@@ -33,5 +34,6 @@ object Generators {
       roomNameList.map(ServerMessage.AllRoomNames(_)),
       roomName.zip(userNames).map(ServerMessage.AllRoomMembers.apply),
       userName.zip(message).map(ServerMessage.DirectMessage.apply),
+      userName.zip(roomName).zip(message).map(ServerMessage.RoomMessage.apply),
     )
 }

@@ -12,12 +12,14 @@ import zio.ZLayer
 import zio.ZEnvironment
 import chatrooms.usecases.JoinRoom
 import chatrooms.usecases.ListRoomMembers
+import chatrooms.usecases.SendMessageToRoom
 
 final case class CommandHandlerLive(
-  sendDirectMessage:SendDirectMessage,
-  joinRoom:JoinRoom,
+  sendDirectMessage: SendDirectMessage,
+  joinRoom: JoinRoom,
+  sendMessageToRoom: SendMessageToRoom,
   listRoomMembers: ListRoomMembers,
-  join:Join,
+  join: Join,
 ) extends CommandHandler {
   def handleCommand(cmd: Command, clientId: ClientId): ZStream[Any, Nothing, WebSocketFrame] =
     cmd.match {
@@ -38,6 +40,10 @@ final case class CommandHandlerLive(
         ZStream.fromZIO(
           listRoomMembers.run(clientId, roomName).map(_.encode).map(WebSocketFrame.text)
         )
+      case Command.SendMessageToRoom(roomName, txt) =>
+        ZStream.fromZIO(
+          sendMessageToRoom.run(clientId, roomName, txt)
+        ) *> ZStream.empty
       case _ => ZStream.empty
     }
 }
@@ -51,5 +57,4 @@ def mapReturn[A] = new MapReturn[A]
 
 object CommandHandlerLive {
   def layer = mapReturn[CommandHandler](ZLayer.fromFunction(CommandHandlerLive.apply))
-
 }
