@@ -15,7 +15,6 @@ object Generators {
       roomName.map(Command.JoinRoom(_)),
       roomName.map(Command.LeaveRoom(_)),
       roomName.zip(txtGen).map(Command.SendText.apply),
-      roomName.map(Command.SendPing(_)),
       roomName.map(Command.ListRoomMembers(_)),
       userName.map(Command.Join(_)),
       roomName.zip(message).map(Command.SendMessageToRoom.apply),
