@@ -17,6 +17,7 @@ import zhttp.socket.WebSocketFrame
 import chatrooms.usecases.JoinRoomMock
 import chatrooms.usecases.ListRoomMembersMock
 import chatrooms.usecases.SendMessageToRoomMock
+import chatrooms.usecases.ListRoomsMock
 
 val name = UserName("Peter")
 val roomName = RoomName("MyRoom")
@@ -29,7 +30,7 @@ private val spec_ = suite("CommandHandlerSpec")(
       val expectedServerMessage = ServerMessage.Acknowledge("join")
       val mockJoin = JoinMock.Run(equalTo((clientId, name)), value(expectedServerMessage)).toLayer
       val app = CommandHandler.handleCommand(Command.Join(name), clientId).runCollect.map(_.toList)
-      val out = app.provideLayer(SendMessageToRoomMock.empty >+> ListRoomMembersMock.empty >+> SendDirectMessageMock.empty >+> mockJoin >+> JoinRoomMock.empty >+> CommandHandlerLive.layer)
+      val out = app.provideLayer(ListRoomsMock.empty >+>SendMessageToRoomMock.empty >+> ListRoomMembersMock.empty >+> SendDirectMessageMock.empty >+> mockJoin >+> JoinRoomMock.empty >+> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List(WebSocketFrame.text(expectedServerMessage.encode))))
     } +
     test("call SendDirectMessage.run when provided a SendDirectMessage command") {
@@ -38,7 +39,7 @@ private val spec_ = suite("CommandHandlerSpec")(
       val mockSendDirectMessage = SendDirectMessageMock.Run(
         equalTo((clientId, name, msg)), value(expectedServerMessage)).toLayer
       val app = CommandHandler.handleCommand(Command.SendDirectMessage(name, msg), clientId).runCollect.map(_.toList)
-      val out = app.provideLayer(SendMessageToRoomMock.empty >+> ListRoomMembersMock.empty >+> mockSendDirectMessage >+> JoinMock.empty >+> JoinRoomMock.empty >+> CommandHandlerLive.layer)
+      val out = app.provideLayer(ListRoomsMock.empty >+> SendMessageToRoomMock.empty >+> ListRoomMembersMock.empty >+> mockSendDirectMessage >+> JoinMock.empty >+> JoinRoomMock.empty >+> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List(WebSocketFrame.text(expectedServerMessage.encode))))
     }
     +
@@ -47,7 +48,7 @@ private val spec_ = suite("CommandHandlerSpec")(
       val joinRoomMock = JoinRoomMock.Run(
         equalTo((clientId, roomName)), value(expectedServerMessage)).toLayer
       val app = CommandHandler.handleCommand(Command.JoinRoom(roomName), clientId).runCollect.map(_.toList)
-      val out = app.provideLayer(SendMessageToRoomMock.empty >+> ListRoomMembersMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> joinRoomMock >+> CommandHandlerLive.layer)
+      val out = app.provideLayer(ListRoomsMock.empty >+> SendMessageToRoomMock.empty >+> ListRoomMembersMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> joinRoomMock >+> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List(WebSocketFrame.text(expectedServerMessage.encode))))
     }
     +
@@ -56,7 +57,7 @@ private val spec_ = suite("CommandHandlerSpec")(
       val listRoomMembersMock = ListRoomMembersMock.Run(
         equalTo((clientId, roomName)), value(expectedServerMessage)).toLayer
       val app = CommandHandler.handleCommand(Command.ListRoomMembers(roomName), clientId).runCollect.map(_.toList)
-      val out = app.provideLayer(SendMessageToRoomMock.empty >+> JoinRoomMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> listRoomMembersMock >+> CommandHandlerLive.layer)
+      val out = app.provideLayer(ListRoomsMock.empty >+> SendMessageToRoomMock.empty >+> JoinRoomMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> listRoomMembersMock >+> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List(WebSocketFrame.text(expectedServerMessage.encode))))
     }
     +
@@ -65,8 +66,18 @@ private val spec_ = suite("CommandHandlerSpec")(
       val sendMessageToRoomMock = SendMessageToRoomMock.Run(
         equalTo((clientId, roomName, msg)), value(None)).toLayer
       val app = CommandHandler.handleCommand(Command.SendMessageToRoom(roomName, msg), clientId).runCollect.map(_.toList)
-      val out = app.provideLayer(sendMessageToRoomMock >+> JoinRoomMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> ListRoomMembersMock.empty >+> CommandHandlerLive.layer)
+      val out = app.provideLayer(ListRoomsMock.empty >+> sendMessageToRoomMock >+> JoinRoomMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> ListRoomMembersMock.empty >+> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List.empty))
+    }
+    +
+    test("call ListRooms.run when provided a ListRooms command") {
+      val msg = "txt"
+      val expectedServerMessage = ServerMessage.AllRoomNames(Set.empty)
+      val listRoomsMock = ListRoomsMock.Run(
+        equalTo(clientId), value(expectedServerMessage)).toLayer
+      val app = CommandHandler.handleCommand(Command.ListRooms, clientId).runCollect.map(_.toList)
+      val out = app.provideLayer(listRoomsMock >+> SendMessageToRoomMock.empty >+> JoinRoomMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> ListRoomMembersMock.empty >+> CommandHandlerLive.layer)
+      assertZIO(out)(equalTo(List(WebSocketFrame.text(expectedServerMessage.encode))))
     }
   )
 ).provideSomeLayer(zio.Random.live).provideSomeLayer(zio.test.Sized.live(100))

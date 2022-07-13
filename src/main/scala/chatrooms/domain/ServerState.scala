@@ -21,6 +21,8 @@ case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room])
       else if nameExists then Left(ServerState.UserNameTaken)
       else Right(ServerState(clients + (client.id -> client), rooms))
   }
+
+  def getAllRoomNames = rooms.keySet
   def getClientName (clientId:ClientId): Option[UserName] =
     clients.get(clientId).map(_.name)
   def getClientIdsOfRoom (roomName:RoomName): Option[Set[ClientId]] =

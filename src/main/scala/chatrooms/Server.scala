@@ -25,6 +25,7 @@ import chatrooms.domain.MessageServiceLive
 import chatrooms.usecases.SendDirectMessage
 import chatrooms.usecases.SendDirectMessageLive
 import chatrooms.usecases.JoinRoomLive
+import chatrooms.usecases.ListRoomsLive
 import chatrooms.usecases.ListRoomMembersLive
 import chatrooms.domain.MessageServiceMock
 
@@ -61,7 +62,9 @@ object Server extends ZIOAppDefault:
     >+> ListRoomMembersLive.layer
     >+> MessageServiceLive.layer
     >+> SendMessageToRoomLive.layer
+    >+> ListRoomsLive.layer
     >+> CommandHandlerLive.layer
+
   ).memoize
 
   def app (cfg:ServerConfig): ZIO[Any, Nothing, Unit] = for {

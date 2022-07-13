@@ -13,12 +13,14 @@ import zio.ZEnvironment
 import chatrooms.usecases.JoinRoom
 import chatrooms.usecases.ListRoomMembers
 import chatrooms.usecases.SendMessageToRoom
+import chatrooms.usecases.ListRooms
 
 final case class CommandHandlerLive(
   sendDirectMessage: SendDirectMessage,
   joinRoom: JoinRoom,
   sendMessageToRoom: SendMessageToRoom,
   listRoomMembers: ListRoomMembers,
+  listRooms: ListRooms,
   join: Join,
 ) extends CommandHandler {
   def handleCommand(cmd: Command, clientId: ClientId): ZStream[Any, Nothing, WebSocketFrame] =
@@ -39,6 +41,10 @@ final case class CommandHandlerLive(
       case Command.ListRoomMembers(roomName) =>
         ZStream.fromZIO(
           listRoomMembers.run(clientId, roomName).map(_.encode).map(WebSocketFrame.text)
+        )
+      case Command.ListRooms =>
+        ZStream.fromZIO(
+          listRooms.run(clientId).map(_.encode).map(WebSocketFrame.text)
         )
       case Command.SendMessageToRoom(roomName, txt) =>
         ZStream.fromZIO(

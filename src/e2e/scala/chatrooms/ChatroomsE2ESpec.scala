@@ -167,6 +167,20 @@ def fullSpec = suite("ChatroomsE2E")(
     }
   }
   +
+  test("listRooms should list all available rooms") {
+    withOneClient("Tom") { (client, queue) =>
+      val roomA = RoomName("roomA")
+      val roomB = RoomName("roomB")
+      for {
+        _ <- Api.join(client, queue)
+        _ <- Api.joinRoom(client, queue, roomA)
+        _ <- Api.joinRoom(client, queue, roomB)
+        _ <- Api.listRoomsShouldMatch(client, queue, Set(roomA, roomB))
+        _ <- Api.exitClient(client)
+      } yield ()
+    }
+  }
+  +
   test("joining a room should be acknowledged") {
     withOneClient("Tom") { (client, queue) =>
       for {
@@ -262,6 +276,10 @@ object Api {
           Some(Command.JoinRoom(roomName)),
           List(ServerMessageFor(c.name, ServerMessage.Acknowledge("joinRoom"))))
 
+  def listRoomsShouldMatch(c:ClientHandle, queue:MsgQueue, rooms:Set[RoomName]) =
+    sendAndWait(c.send, queue,
+          Some(Command.ListRooms),
+          List(ServerMessageFor(c.name, ServerMessage.AllRoomNames(rooms))))
   def listRoomMembersShouldMatch (c:ClientHandle, queue: MsgQueue, roomName:RoomName, expectedMembers:Set[UserName]) =
     sendAndWait(
           c.send, queue,
