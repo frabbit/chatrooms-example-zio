@@ -127,7 +127,7 @@ def fullSpec = suite("ChatroomsE2E")(
         _ <- sendAndWait(client.send, queue,
           Some(Command.Join(UserName("Pim"))),
           List(ServerMessageFor(client.name, ServerMessage.Acknowledge("join"))))
-        _ <- sendOnly(client.send, None)
+        _ <- Api.exitClient(client)
       } yield ()
     }
   }
@@ -142,7 +142,7 @@ def fullSpec = suite("ChatroomsE2E")(
           Some(Command.Join(UserName(client.name))),
           List(ServerMessageFor(client.name, ServerMessage.Error(ServerError.AlreadyJoined))))
 
-        _ <- sendOnly(client.send, None)
+        _ <- Api.exitClient(client)
       } yield ()
     }
   }
@@ -150,14 +150,12 @@ def fullSpec = suite("ChatroomsE2E")(
   test("Joining of a second user joining with the same name should fail") {
     withTwoClients("Tom", "Abe") { (clientA, clientB, queue) =>
       for {
-        _ <- sendAndWait(clientA.send, queue,
-          Some(Command.Join(UserName(clientA.name))),
-          List(ServerMessageFor(clientA.name, ServerMessage.Acknowledge("join"))))
+        _ <- Api.join(clientA, queue)
         _ <- sendAndWait(clientB.send, queue,
           Some(Command.Join(UserName(clientA.name))),
           List(ServerMessageFor(clientB.name, ServerMessage.Error(ServerError.UserNameTaken))))
-        _ <- sendOnly(clientA.send, None)
-        _ <- sendOnly(clientB.send, None)
+        _ <- Api.exitClient(clientA)
+        _ <- Api.exitClient(clientB)
       } yield ()
     }
   }
