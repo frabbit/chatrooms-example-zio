@@ -21,6 +21,8 @@ type Callback = String => ZIO[Any, Nothing, Unit]
 
 type CallbackTyped[Msg] = Msg => ZIO[Any, Nothing, Unit]
 
+case class TestClientConfig (port:Int)
+
 object TestClient {
 
   def receiveLoop (ws: WS, callback: Callback): ZIO[Console, Throwable, Unit] =
@@ -58,11 +60,11 @@ object TestClient {
       _ <- x.interrupt
     } yield ()
 
-  def start (callback:Callback, queue:TQueue[Option[String]], cfg:ServerConfig): RIO[Console with SttpClient, Response[Unit]] =
+  def start (callback:Callback, queue:TQueue[Option[String]], cfg:TestClientConfig): RIO[Console with SttpClient, Response[Unit]] =
     sendR(basicRequest.get(uri"ws://127.0.0.1:${cfg.port}")
       .response(asWebSocketAlways((x:WS) => mainLoop(x, callback, queue))))
 
-  def createClient (callback:Callback, cfg:ServerConfig) =
+  def createClient (callback:Callback, cfg:TestClientConfig) =
     def mkSend (queue:TQueue[Option[String]]) =
       (s:Option[String]) => queue.offer(s).commit.ignore
     for {
@@ -71,7 +73,7 @@ object TestClient {
       _ <- ZIO.sleep(200.milliseconds)
     } yield (mkSend(queue), clientFiber)
 
-  def createTypedClient [Msg, Cmd](callbackTyped:CallbackTyped[Msg], commandEncoder: Cmd => String, messageDecoder: String => Option[Msg], cfg:ServerConfig) =
+  def createTypedClient [Msg, Cmd](callbackTyped:CallbackTyped[Msg], commandEncoder: Cmd => String, messageDecoder: String => Option[Msg], cfg:TestClientConfig) =
     val callback = (s:String) =>
       val msg = messageDecoder(s)
       msg.match {

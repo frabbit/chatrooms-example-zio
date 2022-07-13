@@ -30,6 +30,7 @@ import zio.Console
 import zio.ZLayer
 import chatrooms.utils.Ports
 import chatrooms.domain
+import chatrooms.clientapp.TestClientConfig
 
 
 type ClientName = String
@@ -64,8 +65,7 @@ def withServer [R, A, E](run: ServerConfig => ZIO[R, E, A]) = for {
 def mkTestClient (name:ClientName, queue:MsgQueue, cfg:ServerConfig) =
   val cb = (msg:ServerMessage) =>
     queue.offer(ServerMessageFor(name, msg)).commit.unit
-
-  TestClient.createTypedClient( cb, CommandEncoder.encode, ServerMessage.parse, cfg )
+  TestClient.createTypedClient( cb, CommandEncoder.encode, ServerMessage.parse, TestClientConfig(cfg.port) )
 
 def waitForAll (queue: MsgQueue, msgs: List[ServerMessageFor]):UIO[Unit] =
   def go (left:List[ServerMessageFor]):UIO[Unit] =
