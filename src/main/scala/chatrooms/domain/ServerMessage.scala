@@ -18,6 +18,7 @@ object ServerErrorEncoder {
   def encode (c:ServerError):String = c.match {
     case ServerError.AlreadyJoined => "alreadyJoined"
     case ServerError.UserNameTaken => "userNameTaken"
+    case ServerError.RoomNotFound(room) => "roomNotFound " ++ room.value
   }
 }
 
@@ -32,8 +33,15 @@ object ServerErrorParser {
     c <- Parsley.pure(ServerError.UserNameTaken)
   } yield c
 
+  val roomNotFoundParser: Parsley[ServerError.RoomNotFound] = for {
+    _ <- attempt(string("roomNotFound"))
+    _ <- char(' ')
+    roomName <- RoomName.parser
+    c <- Parsley.pure(ServerError.RoomNotFound(roomName))
+  } yield c
+
   val parser: Parsley[ServerError] = for {
-    c <- alreadyJoinedParser <|> userNameTakenParser
+    c <- alreadyJoinedParser <|> userNameTakenParser <|> roomNotFoundParser
     _ <- eof
   } yield c
 }
@@ -43,6 +51,7 @@ object ServerError {
   type AlreadyJoined = AlreadyJoined.type
   case object UserNameTaken extends ServerError
   type UserNameTaken = UserNameTaken.type
+  case class RoomNotFound(room:RoomName) extends ServerError
 }
 
 sealed trait ServerMessage {
@@ -54,7 +63,7 @@ object ServerMessageEncoder {
     case ServerMessage.Error(error) => ":error " ++ error.encode
     case ServerMessage.Acknowledge(name) => ":acknowledge " ++ name
     case ServerMessage.AllRoomNames(names) => ":allRoomNames " ++ names.mkString(",")
-    case ServerMessage.AllRoomMembers(roomName:RoomName, members: List[ClientId]) => ":allRoomMembers " ++ roomName.value ++ " " ++ members.mkString(",")
+    case ServerMessage.AllRoomMembers(roomName:RoomName, members: Set[UserName]) => ":allRoomMembers " ++ roomName.value ++ " " ++ members.mkString(",")
     case ServerMessage.DirectMessage(from, txt) => ":directMessage " ++ from.value ++ " " ++ txt
   }
 }
@@ -133,8 +142,8 @@ object ServerMessageParser {
       _ <- char(' ')
       roomName <- RoomName.parser
       _ <- char(' ')
-      clientIds <- listOfParser(clientIdParser)
-      x <- Parsley.pure(ServerMessage.AllRoomMembers(roomName, clientIds))
+      userNames <- listOfParser(UserName.parser)
+      x <- Parsley.pure(ServerMessage.AllRoomMembers(roomName, userNames.toSet))
     yield x
 
 
@@ -156,7 +165,7 @@ object ServerMessage {
   final case class Error(error:ServerError) extends ServerMessage
   final case class Acknowledge(command:String) extends ServerMessage
   final case class AllRoomNames(roomNames:List[RoomName]) extends ServerMessage
-  final case class AllRoomMembers(roomName:RoomName, members:List[ClientId]) extends ServerMessage
+  final case class AllRoomMembers(roomName:RoomName, members:Set[UserName]) extends ServerMessage
   final case class DirectMessage(from:UserName, txt:String) extends ServerMessage
 }
 

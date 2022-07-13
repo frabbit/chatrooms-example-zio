@@ -17,6 +17,7 @@ import chatrooms.domain.ServerError
 import chatrooms.domain.Command
 import chatrooms.domain.CommandEncoder
 import chatrooms.domain.UserName
+import chatrooms.domain.RoomName
 
 import _root_.chatrooms.TestClient
 import _root_.chatrooms.Send
@@ -29,6 +30,7 @@ import zio.Console.ConsoleLive
 import zio.Console
 import zio.ZLayer
 import chatrooms.utils.Ports
+import chatrooms.domain
 
 
 type ClientName = String
@@ -135,9 +137,7 @@ def fullSpec = suite("ChatroomsE2E")(
   test("joining should only work once") {
     withOneClient("Tom") { (client, queue) =>
       for {
-        _ <- sendAndWait(client.send, queue,
-          Some(Command.Join(UserName(client.name))),
-          List(ServerMessageFor(client.name, ServerMessage.Acknowledge("join"))))
+        _ <- Api.join(client, queue)
         _ <- sendAndWait(client.send, queue,
           Some(Command.Join(UserName(client.name))),
           List(ServerMessageFor(client.name, ServerMessage.Error(ServerError.AlreadyJoined))))
@@ -171,10 +171,66 @@ def fullSpec = suite("ChatroomsE2E")(
       } yield ()
     }
   }
+  +
+  test("joining a room should be acknowledged") {
+    withOneClient("Tom") { (client, queue) =>
+      for {
+        _ <- Api.join(client, queue)
+        _ <- sendAndWait(client.send, queue,
+          Some(Command.JoinRoom(RoomName("myRoom"))),
+          List(ServerMessageFor(client.name, ServerMessage.Acknowledge("joinRoom"))))
+        _ <- Api.exitClient(client)
+      } yield ()
+    }
+  }
+  +
+  test("listRoomMembers should list myself") {
+    withOneClient("Tom") { (client, queue) =>
+      for {
+        _ <- Api.join(client, queue)
+        roomName = RoomName("myRoom")
+        _ <- Api.joinRoom(client, queue, roomName)
+        _ <- sendAndWait(client.send, queue,
+          Some(Command.ListRoomMembers(roomName)),
+          List(ServerMessageFor(client.name, ServerMessage.AllRoomMembers(roomName, Set(UserName(client.name))))))
+        _ <- Api.exitClient(client)
+      } yield ()
+    }
+  }
+  +
+  test("listRoomMembers should list all members of that room") {
+    withTwoClients("Tom", "Jack") { (clientA, clientB, queue) =>
+      for {
+        _ <- Api.join(clientA, queue)
+        _ <- Api.join(clientB, queue)
+        roomName = RoomName("myRoom")
+        _ <- Api.joinRoom(clientA, queue, roomName)
+        _ <- Api.joinRoom(clientB, queue, roomName)
+        expectedMembers = ServerMessage.AllRoomMembers(roomName, Set(UserName(clientA.name), UserName(clientB.name)))
+        _ <- sendAndWait(
+          clientA.send, queue,
+          Some(Command.ListRoomMembers(roomName)),
+          List(ServerMessageFor(clientA.name, expectedMembers))
+          )
+        _ <- sendAndWait(
+          clientB.send, queue,
+          Some(Command.ListRoomMembers(roomName)),
+          List(ServerMessageFor(clientB.name, expectedMembers))
+          )
+        _ <- Api.exitClient(clientA)
+        _ <- Api.exitClient(clientB)
+      } yield ()
+    }
+  }
 ).provide(AsyncHttpClientZioBackend.layer(), ZLayer.succeed(ConsoleLive)) @@ TestAspect.withLiveEnvironment @@ TestAspect.sequential
 
+
+def inProgressSpec = suite("ChatroomsE2E - In Progress")(
+
+) //.provide(AsyncHttpClientZioBackend.layer(), ZLayer.succeed(ConsoleLive)) @@ TestAspect.withLiveEnvironment @@ TestAspect.sequential
+
 object ChatroomsE2ESpec extends ZIOSpecDefault {
-  override def spec = fullSpec
+  override def spec = inProgressSpec + fullSpec
 }
 
 object Api {
@@ -191,6 +247,10 @@ object Api {
             ServerMessageFor(receiver.name, ServerMessage.DirectMessage(UserName(sender.name), msg ))
           )
     )
+  def joinRoom (c:ClientHandle, queue: MsgQueue, roomName:RoomName) =
+    sendAndWait(c.send, queue,
+          Some(Command.JoinRoom(roomName)),
+          List(ServerMessageFor(c.name, ServerMessage.Acknowledge("joinRoom"))))
 
   def exitClient (c:ClientHandle) =
     sendOnly(c.send, None)

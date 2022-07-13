@@ -7,7 +7,7 @@ import zio.*
 case class Client(id:ClientId, name:UserName)
 
 case class Room(name:RoomName, clients: Set[ClientId]) {
-  def addClient (client:Client) = Room(this.name, this.clients + client.id)
+  def addClient (clientId:ClientId) = Room(this.name, this.clients + clientId)
   def removeClient (client:Client) = Room(this.name, this.clients.filter( c => c != client.id))
 }
 
@@ -20,11 +20,14 @@ case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room])
       else if nameExists then Left(ServerState.UserNameTaken)
       else Right(ServerState(clients + (client.id -> client), rooms))
   }
-
+  def getClientName (clientId:ClientId): Option[UserName] =
+    clients.get(clientId).map(_.name)
   def getClientIdsOfRoom (roomName:RoomName): Option[Set[ClientId]] =
     this.rooms.get(roomName).map(_.clients.toSet)
   def getRoomNamesOfClient (client:Client): Set[RoomName] =
     this.rooms.keySet
+  def getRoomMemberNames (roomName:RoomName): Option[Set[UserName]] =
+    getClientIdsOfRoom(roomName).map(_.flatMap(getClientName))
 
   def removeClient (client:Client):ServerState =
     val roomsOfClient = this.rooms.filter( r => r._2.clients.contains(client.id))
@@ -34,11 +37,11 @@ case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room])
       cleanRooms.rooms
     )
 
-  def joinRoom (roomName:RoomName, client:Client):ServerState = this.rooms.get(roomName).match {
+  def joinRoom (roomName:RoomName, clientId:ClientId):ServerState = this.rooms.get(roomName).match {
     case Some(room) =>
-      ServerState(clients, rooms + (roomName -> room.addClient(client)))
+      ServerState(clients, rooms + (roomName -> room.addClient(clientId)))
     case None =>
-      ServerState(this.clients, this.rooms + (roomName -> Room(roomName, Set(client.id))))
+      ServerState(this.clients, this.rooms + (roomName -> Room(roomName, Set(clientId))))
   }
 
   def leaveRoom (roomName:RoomName, client:Client):ServerState = this.match {
