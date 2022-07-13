@@ -16,6 +16,7 @@ sealed trait ServerError {
 
 object ServerErrorEncoder {
   def encode (c:ServerError):String = c.match {
+    case ServerError.UserIsNotInRoom => "userIsNotInRoom"
     case ServerError.AlreadyJoined => "alreadyJoined"
     case ServerError.UserNameTaken => "userNameTaken"
     case ServerError.RoomNotFound(room) => "roomNotFound " ++ room.value
@@ -33,6 +34,11 @@ object ServerErrorParser {
     c <- Parsley.pure(ServerError.UserNameTaken)
   } yield c
 
+  val userIsNotInRoomParser: Parsley[ServerError.UserIsNotInRoom] = for {
+    _ <- attempt(string("userIsNotInRoom"))
+    c <- Parsley.pure(ServerError.UserIsNotInRoom)
+  } yield c
+
   val roomNotFoundParser: Parsley[ServerError.RoomNotFound] = for {
     _ <- attempt(string("roomNotFound"))
     _ <- char(' ')
@@ -41,7 +47,7 @@ object ServerErrorParser {
   } yield c
 
   val parser: Parsley[ServerError] = for {
-    c <- alreadyJoinedParser <|> userNameTakenParser <|> roomNotFoundParser
+    c <- alreadyJoinedParser <|> userNameTakenParser <|> roomNotFoundParser <|> userIsNotInRoomParser
     _ <- eof
   } yield c
 }
@@ -52,6 +58,8 @@ object ServerError {
   case object UserNameTaken extends ServerError
   type UserNameTaken = UserNameTaken.type
   case class RoomNotFound(room:RoomName) extends ServerError
+  case object UserIsNotInRoom extends ServerError
+  type UserIsNotInRoom = UserIsNotInRoom.type
 }
 
 sealed trait ServerMessage {

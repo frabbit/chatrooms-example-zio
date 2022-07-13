@@ -10,11 +10,11 @@ import chatrooms.domain.ServerMessage
 
 
 trait SendMessageToRoom {
-  def run(clientId:ClientId, name:RoomName, msg:String):ZIO[Any, Nothing, Unit]
+  def run(clientId:ClientId, name:RoomName, msg:String):ZIO[Any, Nothing, Option[ServerMessage]]
 }
 
 object SendMessageToRoom {
-  def run(clientId:ClientId, name:RoomName, msg:String):ZIO[SendMessageToRoom, Nothing, Unit] =
+  def run(clientId:ClientId, name:RoomName, msg:String):ZIO[SendMessageToRoom, Nothing, Option[ServerMessage]] =
     ZIO.serviceWithZIO[SendMessageToRoom](_.run(clientId, name, msg))
 }
 

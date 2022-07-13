@@ -24,7 +24,12 @@ object Generators {
       Gen.const(Command.ListRooms),
     )
   def serverMessage: Gen[Random with Sized, ServerMessage] =
-    val errorGen = Gen.oneOf(Gen.const(ServerError.AlreadyJoined), Gen.const(ServerError.UserNameTaken), roomName.map(ServerError.RoomNotFound(_)))
+    val errorGen = Gen.oneOf(
+      Gen.const(ServerError.AlreadyJoined),
+      Gen.const(ServerError.UserNameTaken),
+      Gen.const(ServerError.UserIsNotInRoom),
+      roomName.map(ServerError.RoomNotFound(_))
+      )
     val cmdGen = Gen.string1(Gen.alphaNumericChar.filter(c => c != '\n'))
     val userNames = Gen.listOfBounded(1, 30)(userName).map(_.toSet)
     val roomNameList = Gen.listOfBounded(0, 50)(roomName)

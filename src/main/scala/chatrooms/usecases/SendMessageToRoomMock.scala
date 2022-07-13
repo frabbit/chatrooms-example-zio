@@ -15,14 +15,14 @@ import chatrooms.domain.ServerError
 import zio.internal.stacktracer.Tracer
 
 object SendMessageToRoomMock extends Mock[SendMessageToRoom]:
-  object Run extends Effect[(ClientId, RoomName, String), Nothing, Unit]
+  object Run extends Effect[(ClientId, RoomName, String), Nothing, Option[ServerMessage]]
 
   val compose: URLayer[Proxy, SendMessageToRoom] = {
     ZLayer.fromZIO(
       ZIO.service[Proxy]
       .map {proxy =>
         new SendMessageToRoom {
-          def run(clientId:ClientId, name:RoomName, msg:String):ZIO[Any, Nothing, Unit] = proxy(Run, clientId, name, msg)
+          def run(clientId:ClientId, name:RoomName, msg:String):ZIO[Any, Nothing, Option[ServerMessage]] = proxy(Run, clientId, name, msg)
         }
       }
     )

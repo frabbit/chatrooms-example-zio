@@ -44,7 +44,20 @@ object SendMessageToRoomLiveSpec extends ZIOSpecDefault {
         val msg = ServerMessage.RoomMessage(name, roomName, message)
         val mock = MessageServiceMock.SendTo(equalTo(clientId, msg), value(())).toLayer
         val app = SendMessageToRoom.run(clientId, roomName, message)
-        assertZIO(app.provideLayer(deps(initialState, mock)))(equalTo(()))
+        assertZIO(app.provideLayer(deps(initialState, mock)))(equalTo(None))
+      }
+    } +
+    test("fail when sending clientId is not in the room") {
+      check(Generators.clientId, Generators.userName, Generators.clientId, Generators.roomName, Generators.userName, Generators.message) { (senderId, senderName, clientId, roomName, name, message) =>
+        val Right(initialState) =
+          ServerState.empty()
+          .addClient(Client(clientId, name))
+          .flatMap(_.addClient(Client(senderId, senderName)))
+          .map(_.joinRoom(roomName, clientId))
+        val msg = ServerMessage.RoomMessage(name, roomName, message)
+        val mock = MessageServiceMock.empty
+        val app = SendMessageToRoom.run(senderId, roomName, message)
+        assertZIO(app.provideLayer(deps(initialState, mock)))(equalTo(Some(ServerMessage.Error(ServerError.UserIsNotInRoom))))
       }
     } +
     test("send a message to all users of a room via MessageService") {
@@ -62,7 +75,7 @@ object SendMessageToRoomLiveSpec extends ZIOSpecDefault {
         ) .toLayer
 
         val app = SendMessageToRoom.run(clientIdA, roomName, message)
-        assertZIO(app.provideLayer(deps(initialState, mock)))(equalTo(()))
+        assertZIO(app.provideLayer(deps(initialState, mock)))(equalTo(None))
       }
     }
   ).provideSomeLayer(zio.Random.live).provideSomeLayer(zio.test.Sized.live(100))

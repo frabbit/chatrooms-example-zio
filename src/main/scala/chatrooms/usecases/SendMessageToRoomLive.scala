@@ -14,19 +14,20 @@ import chatrooms.domain.MessageService
 
 final case class SendMessageToRoomLive(stateRef:TRef[ServerState], ms:MessageService) extends SendMessageToRoom:
 
-  def run(clientId:ClientId, roomName: RoomName, txt:String): ZIO[Any, Nothing, Unit] = for {
+  def run(clientId:ClientId, roomName: RoomName, txt:String): ZIO[Any, Nothing, Option[ServerMessage]] = for {
     state <- stateRef.get.commit
-    clients = state.getClientIdsOfRoom(roomName)
+    clientIdsOpt = state.getClientIdsOfRoom(roomName)
+    senderInRoom = clientIdsOpt.map(_.exists(_ == clientId))
     userName = state.getClientName(clientId)
-
-    _ <- (userName, clients).match {
-      case (Some(name), Some(clientIds)) =>
+    x <- (senderInRoom, userName, clientIdsOpt).match {
+      case (Some(false), _, _) =>
+        ZIO.succeed(Some(ServerMessage.Error(ServerError.UserIsNotInRoom)))
+      case (_, Some(name), Some(clientIds)) =>
         val msg = ServerMessage.RoomMessage(name, roomName, txt)
-        ZIO.collectAll(clientIds.map(ms.sendTo(_, msg))) *> ZIO.unit
+        ZIO.collectAll(clientIds.map(ms.sendTo(_, msg))) *> ZIO.succeed(None)
       case _ =>
-        ZIO.unit
+        ZIO.succeed(None)
     }
-    x <- ZIO.unit
   } yield x
 
 

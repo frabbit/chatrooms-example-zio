@@ -63,7 +63,7 @@ private val spec_ = suite("CommandHandlerSpec")(
     test("call SendMessageToRoom.run when provided a SendMessageToRoom command") {
       val msg = "txt"
       val sendMessageToRoomMock = SendMessageToRoomMock.Run(
-        equalTo((clientId, roomName, msg)), value(())).toLayer
+        equalTo((clientId, roomName, msg)), value(None)).toLayer
       val app = CommandHandler.handleCommand(Command.SendMessageToRoom(roomName, msg), clientId).runCollect.map(_.toList)
       val out = app.provideLayer(sendMessageToRoomMock >+> JoinRoomMock.empty >+> SendDirectMessageMock.empty >+> JoinMock.empty >+> ListRoomMembersMock.empty >+> CommandHandlerLive.layer)
       assertZIO(out)(equalTo(List.empty))
