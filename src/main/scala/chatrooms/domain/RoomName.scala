@@ -11,6 +11,7 @@ object RoomName:
 
   extension (x : RoomName ) {
     def value : String = x
+    def encode = x.value
   }
 
   val parser: Parsley[RoomName] = for {

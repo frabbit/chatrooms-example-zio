@@ -11,6 +11,7 @@ object UserName:
 
   extension (x : UserName ) {
     def value : String = x
+    def encode = x.value
   }
 
   val parser: Parsley[UserName] = for {

@@ -12,14 +12,12 @@ sealed trait ServerError {
   def encode = ServerErrorEncoder.encode(this)
 }
 
-
-
 object ServerErrorEncoder {
   def encode (c:ServerError):String = c.match {
     case ServerError.UserIsNotInRoom => "userIsNotInRoom"
     case ServerError.AlreadyJoined => "alreadyJoined"
     case ServerError.UserNameTaken => "userNameTaken"
-    case ServerError.RoomNotFound(room) => "roomNotFound " ++ room.value
+    case ServerError.RoomNotFound(room) => "roomNotFound " ++ room.encode
   }
 }
 
@@ -151,9 +149,7 @@ object ServerMessageParser {
 
 
   val clientIdParser: Parsley[ClientId] =
-    for
-      u <- uuidParser
-    yield ClientId(u.toString())
+    uuidParser.map(u => ClientId(u.toString()))
 
   val allRoomMembersParser: Parsley[ServerMessage.AllRoomMembers] =
     for
@@ -165,11 +161,9 @@ object ServerMessageParser {
       x <- Parsley.pure(ServerMessage.AllRoomMembers(roomName, userNames.toSet))
     yield x
 
-
-
   val parser: Parsley[ServerMessage] = for {
     c <-
-      acknowledgeParser
+          acknowledgeParser
       <|> allRoomNamesParser
       <|> allRoomMembersParser
       <|> errorParser
