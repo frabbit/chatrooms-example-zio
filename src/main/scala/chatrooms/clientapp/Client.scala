@@ -1,4 +1,4 @@
-package chatrooms
+package chatrooms.clientapp
 
 import scala.language.postfixOps
 import sttp.client3._
@@ -9,7 +9,7 @@ import zio.Console._
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.TimeUnit
 
-object WebSocketClient extends ZIOAppDefault {
+object Client extends ZIOAppDefault {
 
   def useWebSocket(ws: WebSocket[[X] =>> ZIO[Console, Throwable, X]]): RIO[Console, Unit] = {
     val receive = ws.receiveText().flatMap(t => Console.printLine(s"RECEIVED: $t"))
