@@ -122,7 +122,7 @@ object ServerMessageParser {
     _ <- attempt(string(":allRoomNames"))
     _ <- char(' ')
     roomNames <- listOfParser(RoomName.parser)
-    x <- Parsley.pure(ServerMessage.AllRoomNames(roomNames))
+    x <- Parsley.pure(ServerMessage.AllRoomNames(roomNames.toSet))
   yield x
 
   val errorParser: Parsley[ServerMessage.Error] = for
@@ -184,7 +184,7 @@ object ServerMessage {
 
   final case class Error(error:ServerError) extends ServerMessage
   final case class Acknowledge(command:String) extends ServerMessage
-  final case class AllRoomNames(roomNames:List[RoomName]) extends ServerMessage
+  final case class AllRoomNames(roomNames:Set[RoomName]) extends ServerMessage
   final case class RoomMessage(from:UserName, roomName:RoomName, txt:String) extends ServerMessage
   final case class AllRoomMembers(roomName:RoomName, members:Set[UserName]) extends ServerMessage
   final case class DirectMessage(from:UserName, txt:String) extends ServerMessage

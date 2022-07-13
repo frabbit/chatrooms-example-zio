@@ -32,11 +32,11 @@ object Generators {
       )
     val cmdGen = Gen.string1(Gen.alphaNumericChar.filter(c => c != '\n'))
     val userNames = Gen.listOfBounded(1, 30)(userName).map(_.toSet)
-    val roomNameList = Gen.listOfBounded(0, 50)(roomName)
+    val roomNames = Gen.listOfBounded(0, 50)(roomName).map(_.toSet)
     Gen.oneOf(
       errorGen.map(ServerMessage.Error(_)),
       cmdGen.map(ServerMessage.Acknowledge(_)),
-      roomNameList.map(ServerMessage.AllRoomNames(_)),
+      roomNames.map(ServerMessage.AllRoomNames(_)),
       roomName.zip(userNames).map(ServerMessage.AllRoomMembers.apply),
       userName.zip(message).map(ServerMessage.DirectMessage.apply),
       userName.zip(roomName).zip(message).map(ServerMessage.RoomMessage.apply),
