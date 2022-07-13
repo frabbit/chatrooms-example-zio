@@ -38,13 +38,20 @@ def findPort:ZIO[Any, Nothing, Int] = for {
   x <- if avail then ZIO.succeed(port) else findPort
 } yield x
 
-def withServer [R, A, E](run: ServerConfig => ZIO[R, E, A]) = for {
+
+
+def withServer [R, A, E](run: ServerConfig => ZIO[R, E, A]) =
+  def waitUntilServerIsAvailable (port:Int):UIO[Unit] =
+    Ports.available(port).flatMap(b => if b then ZIO.sleep(50.milliseconds) *> waitUntilServerIsAvailable(port) else ZIO.unit)
+  for {
   port <- findPort
   cfg = ServerConfig(port)
+
   acquire =
     for
       s <- Server.app(cfg).fork
-      _ <- ZIO.sleep(600.milliseconds)
+      _ <- waitUntilServerIsAvailable(port)
+
     yield s
   r <- ZIO.acquireReleaseWith(acquire)(_.interrupt.forkDaemon)(_ => run(cfg))
   } yield r
