@@ -1,10 +1,5 @@
 package chatrooms.domain
 
-case class Room(name:RoomName, clients: Set[ClientId]) {
-  def addClient (clientId:ClientId) = Room(this.name, this.clients + clientId)
-  def removeClient (client:Client) = Room(this.name, this.clients.filter( c => c != client.id))
-}
-
 case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room]) {
   def getClientIds ():Set[ClientId] = this.clients.keySet
   def addClient (client:Client):Either[ServerState.ClientExists | ServerState.UserNameTaken, ServerState] = this.match {

@@ -16,15 +16,13 @@ import chatrooms.socketapp.ServerConfig
 
 type Send[Msg] = Option[Msg] => UIO[Unit]
 
-type WS = WebSocket[[X] =>> ZIO[Console, Throwable, X]]
 type Callback = String => ZIO[Any, Nothing, Unit]
 
 type CallbackTyped[Msg] = Msg => ZIO[Any, Nothing, Unit]
 
-case class TestClientConfig (port:Int)
-
 object TestClient {
-
+  type WS = WebSocket[[X] =>> ZIO[Console, Throwable, X]]
+  case class Config (port:Int)
   def receiveLoop (ws: WS, callback: Callback): ZIO[Console, Throwable, Unit] =
     val receive = ws.receive()
     for {
@@ -33,9 +31,9 @@ object TestClient {
           //Console.printLine("text message received: " ++ m).ignore *>
           callback(m)
         case Right(r) =>
-          Console.printLine("other received: " ++ r.toString()).ignore
+          Console.printLine("unknown message received: " ++ r.toString()).ignore
         case Left(e) =>
-          Console.printLine("error received: " ++ e.toString).ignore
+          Console.printLine("error message received: " ++ e.toString).ignore
       }
       _ <- receiveLoop(ws, callback)
     } yield ()
@@ -60,11 +58,11 @@ object TestClient {
       _ <- x.interrupt
     } yield ()
 
-  def start (callback:Callback, queue:TQueue[Option[String]], cfg:TestClientConfig): RIO[Console with SttpClient, Response[Unit]] =
+  def start (callback:Callback, queue:TQueue[Option[String]], cfg:Config): RIO[Console with SttpClient, Response[Unit]] =
     sendR(basicRequest.get(uri"ws://127.0.0.1:${cfg.port}")
       .response(asWebSocketAlways((x:WS) => mainLoop(x, callback, queue))))
 
-  def createClient (callback:Callback, cfg:TestClientConfig) =
+  def createClient (callback:Callback, cfg:Config) =
     def mkSend (queue:TQueue[Option[String]]) =
       (s:Option[String]) => queue.offer(s).commit.ignore
     for {
@@ -73,7 +71,7 @@ object TestClient {
       _ <- ZIO.sleep(200.milliseconds)
     } yield (mkSend(queue), clientFiber)
 
-  def createTypedClient [Msg, Cmd](callbackTyped:CallbackTyped[Msg], commandEncoder: Cmd => String, messageDecoder: String => Option[Msg], cfg:TestClientConfig) =
+  def createTypedClient [Msg, Cmd](callbackTyped:CallbackTyped[Msg], commandEncoder: Cmd => String, messageDecoder: String => Option[Msg], cfg:Config) =
     val callback = (s:String) =>
       val msg = messageDecoder(s)
       msg.match {
