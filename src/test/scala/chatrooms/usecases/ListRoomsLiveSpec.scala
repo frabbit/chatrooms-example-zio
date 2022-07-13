@@ -44,7 +44,7 @@ object ListRoomsLiveSpec extends ZIOSpecDefault {
         assertZIO(app.provideLayer(deps(st)))(equalTo(ServerMessage.AllRoomNames(Set(roomA, roomB))))
       }
     }
-  ).provideSomeLayer(zio.Random.live).provideSomeLayer(zio.test.Sized.live(100))
+  ) @@ chatrooms.CustomTestConfig.use
 
   override def spec = spec_
 }

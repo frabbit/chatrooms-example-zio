@@ -1,16 +1,15 @@
 package chatrooms.domain
 
 import zio.test.Gen
-import zio.Random
 import zio.test.Sized
 
 object Generators {
-  def message : Gen[Random with Sized, String] = Gen.string1(Gen.char.filter(c => !List('\n').contains(c) ))
-  def clientId : Gen[Random with Sized, ClientId] = Gen.uuid.map(id => ClientId(id.toString()))
-  def client : Gen[Random with Sized, Client] = clientId.zip(userName).map(Client.apply)
-  def roomName : Gen[Random with Sized, RoomName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => RoomName(s))
-  def userName : Gen[Random with Sized, UserName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => UserName(s))
-  def command: Gen[Random with Sized, Command] =
+  def message : Gen[Sized, String] = Gen.string1(Gen.char.filter(c => !List('\n').contains(c) ))
+  def clientId : Gen[Sized, ClientId] = Gen.uuid.map(id => ClientId(id.toString()))
+  def client : Gen[Sized, Client] = clientId.zip(userName).map(Client.apply)
+  def roomName : Gen[Sized, RoomName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => RoomName(s))
+  def userName : Gen[Sized, UserName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => UserName(s))
+  def command: Gen[Sized, Command] =
     val txtGen = Gen.string1(Gen.alphaNumericChar.filter(c => c != '\n'))
     Gen.oneOf(
       roomName.map(Command.JoinRoom(_)),
@@ -23,7 +22,7 @@ object Generators {
       userName.zip(message).map(Command.SendDirectMessage.apply),
       Gen.const(Command.ListRooms),
     )
-  def serverMessage: Gen[Random with Sized, ServerMessage] =
+  def serverMessage: Gen[Sized, ServerMessage] =
     val errorGen = Gen.oneOf(
       Gen.const(ServerError.AlreadyJoined),
       Gen.const(ServerError.UserNameTaken),

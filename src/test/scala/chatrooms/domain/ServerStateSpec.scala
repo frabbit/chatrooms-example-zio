@@ -1,16 +1,16 @@
 package chatrooms.domain
 
-
 import zio.test.TestAspect
 import zio.ZIO
 import zio.test.Assertion._
 import zio.test._
 import zio.test.{Gen, Sized}
 import zio.test.Gen as G
-import zio.Random
 import _root_.chatrooms.all.allSyntaxChatrooms
 
-private def spec_ = suite("ServerState")(
+object ServerStateSpec extends ZIOSpecDefault {
+
+  private def spec_ = suite("ServerState")(
     suite("empty should")(
       test("create an empty ServerState") {
         val expectedState = ServerState(Map(), Map())
@@ -178,8 +178,8 @@ private def spec_ = suite("ServerState")(
         }
       }
     )
-  ).provideSomeLayer(zio.Random.live).provideSomeLayer(zio.test.Sized.live(100))
+  ) @@ _root_.chatrooms.CustomTestConfig.use
 
-object ServerStateSpec extends ZIOSpecDefault {
+
   override def spec = spec_
 }

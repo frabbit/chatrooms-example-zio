@@ -64,7 +64,7 @@ object JoinLiveSpec extends ZIOSpecDefault {
         assertZIO(app.provideLayer(deps()))(equalTo(Set(clientIdA, clientIdB)))
       }
     }
-  ).provideSomeLayer(zio.Random.live).provideSomeLayer(zio.test.Sized.live(100))
+  )  @@ chatrooms.CustomTestConfig.use
 
   override def spec = spec_
 }

@@ -78,7 +78,8 @@ object SendMessageToRoomLiveSpec extends ZIOSpecDefault {
         assertZIO(app.provideLayer(deps(initialState, mock)))(equalTo(None))
       }
     }
-  ).provideSomeLayer(zio.Random.live).provideSomeLayer(zio.test.Sized.live(100))
+  ) @@ chatrooms.CustomTestConfig.use
 
   override def spec = spec_
 }
+
