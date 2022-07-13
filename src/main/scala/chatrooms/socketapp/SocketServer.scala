@@ -93,7 +93,7 @@ class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) 
 
 
 object SocketServer {
-  def start:Start[SocketServer] = (onConnect:Callback) => for {
+  def start:Start[SocketServer] = (onConnect) => for {
     s <- ZIO.service[SocketServer]
     x <- s.start(onConnect)
 
