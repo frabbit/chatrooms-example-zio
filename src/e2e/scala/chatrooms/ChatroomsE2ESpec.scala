@@ -126,9 +126,7 @@ def fullSpec = suite("ChatroomsE2E")(
   test("joining should be acknowledged") {
     withOneClient("Tom") { (client, queue) =>
       for {
-        _ <- sendAndWait(client.send, queue,
-          Some(Command.Join(UserName("Pim"))),
-          List(ServerMessageFor(client.name, ServerMessage.Acknowledge("join"))))
+        _ <- Api.join(client, queue)
         _ <- Api.exitClient(client)
       } yield ()
     }
@@ -149,9 +147,7 @@ def fullSpec = suite("ChatroomsE2E")(
     withOneClient("Tom") { (client, queue) =>
       for {
         _ <- Api.join(client, queue)
-        _ <- sendAndWait(client.send, queue,
-          Some(Command.JoinRoom(RoomName("myRoom"))),
-          List(ServerMessageFor(client.name, ServerMessage.Acknowledge("joinRoom"))))
+        _ <- Api.joinRoom(client, queue, RoomName("myRoom"))
         _ <- Api.exitClient(client)
       } yield ()
     }
@@ -163,9 +159,7 @@ def fullSpec = suite("ChatroomsE2E")(
         _ <- Api.join(client, queue)
         roomName = RoomName("myRoom")
         _ <- Api.joinRoom(client, queue, roomName)
-        _ <- sendAndWait(client.send, queue,
-          Some(Command.ListRoomMembers(roomName)),
-          List(ServerMessageFor(client.name, ServerMessage.AllRoomMembers(roomName, Set(UserName(client.name))))))
+        _ <- Api.listRoomMembersShouldMatch(client, queue, roomName, Set(UserName(client.name)))
         _ <- Api.exitClient(client)
       } yield ()
     }
@@ -179,17 +173,9 @@ def fullSpec = suite("ChatroomsE2E")(
         roomName = RoomName("myRoom")
         _ <- Api.joinRoom(clientA, queue, roomName)
         _ <- Api.joinRoom(clientB, queue, roomName)
-        expectedMembers = ServerMessage.AllRoomMembers(roomName, Set(UserName(clientA.name), UserName(clientB.name)))
-        _ <- sendAndWait(
-          clientA.send, queue,
-          Some(Command.ListRoomMembers(roomName)),
-          List(ServerMessageFor(clientA.name, expectedMembers))
-          )
-        _ <- sendAndWait(
-          clientB.send, queue,
-          Some(Command.ListRoomMembers(roomName)),
-          List(ServerMessageFor(clientB.name, expectedMembers))
-          )
+        expectedMembers = Set(UserName(clientA.name), UserName(clientB.name))
+        _ <- Api.listRoomMembersShouldMatch(clientA, queue, roomName, expectedMembers)
+        _ <- Api.listRoomMembersShouldMatch(clientB, queue, roomName, expectedMembers)
         _ <- Api.exitClient(clientA)
         _ <- Api.exitClient(clientB)
       } yield ()
@@ -224,6 +210,13 @@ object Api {
     sendAndWait(c.send, queue,
           Some(Command.JoinRoom(roomName)),
           List(ServerMessageFor(c.name, ServerMessage.Acknowledge("joinRoom"))))
+
+  def listRoomMembersShouldMatch (c:ClientHandle, queue: MsgQueue, roomName:RoomName, expectedMembers:Set[UserName]) =
+    sendAndWait(
+          c.send, queue,
+          Some(Command.ListRoomMembers(roomName)),
+          List(ServerMessageFor(c.name, ServerMessage.AllRoomMembers(roomName, expectedMembers)))
+          )
 
   def exitClient (c:ClientHandle) =
     sendOnly(c.send, None)
