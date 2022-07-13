@@ -51,24 +51,23 @@ object TestClient {
         ZIO.unit
     }
 
-
-  def app (ws:WS,callback:Callback, queue:TQueue[Option[String]]):RIO[Console, Unit] =
+  def mainLoop (ws:WS,callback:Callback, queue:TQueue[Option[String]]):RIO[Console, Unit] =
     for {
       x <- receiveLoop(ws, callback).fork
       _ <- sendLoop(ws, queue)
       _ <- x.interrupt
     } yield ()
 
-  def createClientRaw (callback:Callback, queue:TQueue[Option[String]], cfg:ServerConfig): RIO[Console with SttpClient, Response[Unit]] =
+  def start (callback:Callback, queue:TQueue[Option[String]], cfg:ServerConfig): RIO[Console with SttpClient, Response[Unit]] =
     sendR(basicRequest.get(uri"ws://127.0.0.1:${cfg.port}")
-      .response(asWebSocketAlways((x:WS) => app(x, callback, queue))))
+      .response(asWebSocketAlways((x:WS) => mainLoop(x, callback, queue))))
 
   def createClient (callback:Callback, cfg:ServerConfig) =
     def mkSend (queue:TQueue[Option[String]]) =
       (s:Option[String]) => queue.offer(s).commit.ignore
     for {
       queue <- TQueue.unbounded[Option[String]].commit
-      clientFiber <- createClientRaw(callback, queue, cfg).fork
+      clientFiber <- start(callback, queue, cfg).fork
       _ <- ZIO.sleep(200.milliseconds)
     } yield (mkSend(queue), clientFiber)
 
