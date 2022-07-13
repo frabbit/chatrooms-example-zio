@@ -140,7 +140,7 @@ def fullSpec = suite("ChatroomsE2E")(
           List(ServerMessageFor(client.name, ServerMessage.Acknowledge("join"))))
         _ <- sendAndWait(client.send, queue,
           Some(Command.Join(UserName(client.name))),
-          List(ServerMessageFor(client.name, ServerMessage.Error(ServerError.AlreadyJoined()))))
+          List(ServerMessageFor(client.name, ServerMessage.Error(ServerError.AlreadyJoined))))
 
         _ <- sendOnly(client.send, None)
       } yield ()

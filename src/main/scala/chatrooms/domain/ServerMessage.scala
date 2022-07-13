@@ -16,7 +16,7 @@ sealed trait ServerError {
 
 object ServerErrorEncoder {
   def encode (c:ServerError):String = c.match {
-    case ServerError.AlreadyJoined() => "alreadyJoined"
+    case ServerError.AlreadyJoined => "alreadyJoined"
     case ServerError.UserNameTaken => "userNameTaken"
   }
 }
@@ -24,7 +24,7 @@ object ServerErrorEncoder {
 object ServerErrorParser {
   val alreadyJoinedParser: Parsley[ServerError.AlreadyJoined] = for {
     _ <- attempt(string("alreadyJoined"))
-    c <- Parsley.pure(ServerError.AlreadyJoined())
+    c <- Parsley.pure(ServerError.AlreadyJoined)
   } yield c
 
   val userNameTakenParser: Parsley[ServerError.UserNameTaken] = for {
@@ -39,7 +39,8 @@ object ServerErrorParser {
 }
 
 object ServerError {
-  case class AlreadyJoined() extends ServerError
+  case object AlreadyJoined extends ServerError
+  type AlreadyJoined = AlreadyJoined.type
   case object UserNameTaken extends ServerError
   type UserNameTaken = UserNameTaken.type
 }

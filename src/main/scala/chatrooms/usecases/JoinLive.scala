@@ -15,7 +15,7 @@ final case class JoinLive(stateRef:TRef[ServerState], server:SocketServer) exten
   def map (s:ServerState, name:UserName, clientId:ClientId):(ServerMessage, ServerState) =
     s.addClient(Client(clientId, name)).match {
       case Right(s1) => (ServerMessage.Acknowledge("join"), s1)
-      case Left(ServerState.ClientExists) => (ServerMessage.Error(ServerError.AlreadyJoined()), s)
+      case Left(ServerState.ClientExists) => (ServerMessage.Error(ServerError.AlreadyJoined), s)
       case Left(ServerState.UserNameTaken) => (ServerMessage.Error(ServerError.UserNameTaken), s)
     }
   def run(clientId:ClientId, name: UserName): ZIO[Any, Nothing, ServerMessage] =
