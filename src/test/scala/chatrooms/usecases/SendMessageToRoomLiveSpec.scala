@@ -8,7 +8,6 @@ import zio.test.Assertion.{equalTo, anything }
 import chatrooms.domain.Command
 import chatrooms.domain.UserName
 import chatrooms.domain.RoomName
-import chatrooms.CommandHandler
 import chatrooms.domain.ClientId
 import chatrooms.domain.ServerMessage
 import chatrooms.usecases.JoinMock

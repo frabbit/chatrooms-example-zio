@@ -1,5 +1,4 @@
-package chatrooms
-package domain
+package chatrooms.socketapp
 
 import scala.languageFeature.implicitConversions
 

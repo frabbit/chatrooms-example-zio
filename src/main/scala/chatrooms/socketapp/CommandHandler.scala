@@ -1,4 +1,4 @@
-package chatrooms
+package chatrooms.socketapp
 
 import chatrooms.domain.Command
 import chatrooms.domain.ClientId

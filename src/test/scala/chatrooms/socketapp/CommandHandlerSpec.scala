@@ -1,4 +1,4 @@
-package chatrooms
+package chatrooms.socketapp
 
 import zio.test._
 import zio.mock.Expectation.{unit, value, valueF}
@@ -6,7 +6,7 @@ import zio.test.Assertion.{equalTo }
 import chatrooms.domain.Command
 import chatrooms.domain.UserName
 import chatrooms.domain.RoomName
-import chatrooms.CommandHandler
+import chatrooms.socketapp.CommandHandler
 import chatrooms.domain.ClientId
 import chatrooms.domain.ServerMessage
 import chatrooms.usecases.JoinMock

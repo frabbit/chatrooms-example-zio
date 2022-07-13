@@ -5,7 +5,6 @@ import zio.mock.Proxy
 import zio.*
 import zio.stm.TRef
 import chatrooms.domain.ServerState
-import chatrooms.domain.SocketServer
 import chatrooms.domain.ClientId
 import chatrooms.domain.UserName
 import chatrooms.domain.ServerMessage

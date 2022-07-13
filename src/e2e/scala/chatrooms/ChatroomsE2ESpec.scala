@@ -10,8 +10,8 @@ import zio.test.{Gen, Sized}
 import zio.test.Gen as G
 import zio.Random
 import chatrooms.all.allSyntaxChatrooms
-import chatrooms.Server
-import chatrooms.ServerConfig
+import chatrooms.socketapp.Server
+import chatrooms.socketapp.ServerConfig
 import chatrooms.domain.ServerMessage
 import chatrooms.domain.ServerError
 import chatrooms.domain.Command
@@ -19,8 +19,7 @@ import chatrooms.domain.CommandEncoder
 import chatrooms.domain.UserName
 import chatrooms.domain.RoomName
 
-import _root_.chatrooms.TestClient
-import _root_.chatrooms.Send
+import _root_.chatrooms.clientapp.{TestClient, Send}
 import zio.stm.TQueue
 import zio.durationInt
 import zio.Clock

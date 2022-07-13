@@ -1,4 +1,4 @@
-package chatrooms
+package chatrooms.clientapp
 
 import scala.language.postfixOps
 import sttp.client3._
@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit
 import sttp.ws.WebSocketFrame
 import scala.concurrent.duration.Duration.apply
 import zio.stm.TRef
+import chatrooms.socketapp.ServerConfig
 
 type Send[Msg] = Option[Msg] => UIO[Unit]
 

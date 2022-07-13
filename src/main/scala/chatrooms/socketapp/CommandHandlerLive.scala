@@ -1,7 +1,6 @@
-package chatrooms
+package chatrooms.socketapp
 
-import chatrooms.usecases.Join
-import chatrooms.usecases.SendDirectMessage
+
 import chatrooms.domain.ClientId
 import chatrooms.domain.Command
 import zhttp.socket.WebSocketFrame
@@ -14,6 +13,9 @@ import chatrooms.usecases.JoinRoom
 import chatrooms.usecases.ListRoomMembers
 import chatrooms.usecases.SendMessageToRoom
 import chatrooms.usecases.ListRooms
+import chatrooms.usecases.Join
+import chatrooms.usecases.SendDirectMessage
+import chatrooms.socketapp.CommandHandler
 
 final case class CommandHandlerLive(
   sendDirectMessage: SendDirectMessage,

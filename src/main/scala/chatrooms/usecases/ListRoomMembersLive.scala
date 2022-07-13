@@ -3,7 +3,6 @@ package chatrooms.usecases
 import zio.*
 import zio.stm.TRef
 import chatrooms.domain.ServerState
-import chatrooms.domain.SocketServer
 import chatrooms.domain.ClientId
 import chatrooms.domain.RoomName
 import chatrooms.domain.ServerMessage
@@ -11,7 +10,7 @@ import zio.stream.ZStream
 import chatrooms.domain.Client
 import chatrooms.domain.ServerError
 
-final case class ListRoomMembersLive(stateRef:TRef[ServerState], server:SocketServer) extends ListRoomMembers:
+final case class ListRoomMembersLive(stateRef:TRef[ServerState]) extends ListRoomMembers:
 
   def map (s:ServerState, name:RoomName, clientId:ClientId):ServerMessage =
     s.getRoomMemberNames(name).match {
@@ -24,5 +23,5 @@ final case class ListRoomMembersLive(stateRef:TRef[ServerState], server:SocketSe
 
 
 object ListRoomMembersLive:
-  val layer:ZLayer[TRef[ServerState] & SocketServer, Nothing, ListRoomMembers] = ZLayer.fromFunction(ListRoomMembersLive.apply)
+  val layer:ZLayer[TRef[ServerState], Nothing, ListRoomMembers] = ZLayer.fromFunction(ListRoomMembersLive.apply)
 

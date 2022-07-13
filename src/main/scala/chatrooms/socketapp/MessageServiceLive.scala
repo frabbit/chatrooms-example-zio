@@ -1,8 +1,11 @@
-package chatrooms.domain
+package chatrooms.socketapp
 
 import zio.*
 import zio.stm.TRef
 import zio.stream.ZStream
+import chatrooms.domain.MessageService
+import chatrooms.domain.ClientId
+import chatrooms.domain.ServerMessage
 
 final case class MessageServiceLive(server:SocketServer) extends MessageService:
 

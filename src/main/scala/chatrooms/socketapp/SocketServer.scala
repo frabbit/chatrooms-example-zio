@@ -1,5 +1,4 @@
-package chatrooms
-package domain
+package chatrooms.socketapp
 
 import scala.languageFeature.implicitConversions
 
@@ -23,6 +22,7 @@ import zhttp.socket.Socket.PartialCollect
 import zhttp.service.Logging
 import zhttp.service.EventLoopGroup
 import zhttp.service.server.ServerChannelFactory
+import chatrooms.domain.ClientId
 
 type CallbackE[E] = PartialFunction[(ClientId, WebSocketFrame), ZStream[Any & E, Nothing, WebSocketFrame]]
 
