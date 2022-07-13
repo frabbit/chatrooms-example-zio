@@ -45,7 +45,7 @@ def withServer [R, A, E](run: ServerConfig => ZIO[R, E, A]) = for {
   acquire =
     for
       s <- Server.app(cfg).fork
-      _ <- ZIO.sleep(450.milliseconds)
+      _ <- ZIO.sleep(600.milliseconds)
     yield s
   r <- ZIO.acquireReleaseWith(acquire)(_.interrupt.forkDaemon)(_ => run(cfg))
   } yield r
@@ -87,7 +87,7 @@ def withOneClient[R,E,A](name:ClientName)(run:(ClientHandle,MsgQueue) => ZIO[R,E
           case (sendPim, fiberClient) => for {
             _ <- run(ClientHandle(name, sendPim), queue)
             _ <- fiberClient.await
-            _ <- ZIO.sleep(300.milliseconds)
+            _ <- ZIO.sleep(400.milliseconds)
           } yield ()
         }
       } yield ()
@@ -104,7 +104,7 @@ def withTwoClients[R,E,A](nameA:ClientName, nameB:ClientName)(run:(ClientHandle,
         _ <- run(ClientHandle(nameA, a._1), ClientHandle(nameB, b._1), queue)
         _ <- a._2.await
         _ <- b._2.await
-        _ <- ZIO.sleep(200.milliseconds)
+        _ <- ZIO.sleep(400.milliseconds)
 
 
       } yield ()
