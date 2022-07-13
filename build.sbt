@@ -1,3 +1,5 @@
+import bloop.integrations.sbt.BloopDefaults
+
 val scala3Version = "3.1.0"
 
 lazy val E2ETest = config("e2e") extend(Test)
@@ -25,7 +27,7 @@ lazy val root = project
   .in(file("."))
   .configs(E2ETest)
   .settings(
-    inConfig(E2ETest)(Defaults.testSettings),
+    inConfig(E2ETest)(Defaults.testSettings ++ BloopDefaults.configSettings),
     autoCompilerPlugins := true,
     name := "chatrooms",
     version := "0.1.0-SNAPSHOT",
