@@ -22,12 +22,6 @@ import chatrooms.domain.ServerState
 import chatrooms.domain.ServerError
 import chatrooms.domain.Generators
 
-val name = UserName("Peter")
-val nameB = UserName("Sarah")
-val roomName = RoomName("MyRoom")
-val clientIdA = ClientId("clientIdA")
-val clientIdB = ClientId("clientIdB")
-
 def fromState [B](f:ServerState => B):ZIO[TRef[ServerState], Nothing, B] = ZIO.serviceWithZIO[TRef[ServerState]](_.get.commit).map(f)
 def stateLayer (s:ServerState = ServerState.empty()) = ZLayer.fromZIO(TRef.make(ServerState.empty()).commit)
 
