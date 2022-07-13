@@ -1,11 +1,16 @@
-
+clean:
+	bloop clean root
 compile:
-	sbt compile
+	bloop compile root
+compile-test-unit:
+	bloop compile root-test
+compile-test-e2e:
+	bloop compile root-e2e
 test-unit:
-	sbt test
+	bloop test root-test
 test-unit-watch:
-	sbt ~test
+	bloop test root-test -w
 test-e2e:
-	sbt "E2ETest / test"
+	bloop test root-e2e
 test-e2e-watch:
-	sbt "~E2ETest / test"
+	bloop test root-e2e -w
