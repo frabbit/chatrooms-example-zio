@@ -26,6 +26,3 @@ object SendMessageToRoomMock extends Mock[SendMessageToRoom]:
       }
     )
   }
-
-
-

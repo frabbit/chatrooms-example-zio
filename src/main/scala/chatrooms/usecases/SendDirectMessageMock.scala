@@ -27,6 +27,3 @@ object SendDirectMessageMock extends Mock[SendDirectMessage]:
       }
     )
   }
-
-
-

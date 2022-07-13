@@ -26,6 +26,3 @@ object JoinMock extends Mock[Join]:
       }
     )
   }
-
-
-

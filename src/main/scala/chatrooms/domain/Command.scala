@@ -97,4 +97,3 @@ object Command {
   final case class Join(name:UserName) extends Command
   final case class SendDirectMessage(to:UserName, txt:String) extends Command
 }
-

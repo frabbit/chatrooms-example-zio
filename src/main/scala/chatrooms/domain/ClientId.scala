@@ -8,5 +8,3 @@ object ClientId:
   extension (x : ClientId ) {
     def value : String = x
   }
-
-

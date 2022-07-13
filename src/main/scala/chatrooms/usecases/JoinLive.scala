@@ -22,7 +22,5 @@ final case class JoinLive(stateRef:TRef[ServerState]) extends Join:
       msg <- stateRef.modify(map(_, name, clientId)).commit
     } yield msg
 
-
 object JoinLive:
   val layer:ZLayer[TRef[ServerState], Nothing, Join] = ZLayer.fromFunction(JoinLive.apply)
-

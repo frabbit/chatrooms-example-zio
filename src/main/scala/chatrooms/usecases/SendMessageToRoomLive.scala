@@ -29,7 +29,5 @@ final case class SendMessageToRoomLive(stateRef:TRef[ServerState], ms:MessageSer
     }
   } yield x
 
-
 object SendMessageToRoomLive:
   val layer:ZLayer[TRef[ServerState] & MessageService, Nothing, SendMessageToRoom] = ZLayer.fromFunction(SendMessageToRoomLive.apply)
-

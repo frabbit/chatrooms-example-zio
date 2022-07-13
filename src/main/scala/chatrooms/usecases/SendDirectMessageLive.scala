@@ -24,4 +24,3 @@ final case class SendDirectMessageLive(stateRef:TRef[ServerState], ms:MessageSer
 
 object SendDirectMessageLive:
   val layer:ZLayer[TRef[ServerState] & MessageService, Nothing, SendDirectMessage] = ZLayer.fromFunction(SendDirectMessageLive.apply)
-

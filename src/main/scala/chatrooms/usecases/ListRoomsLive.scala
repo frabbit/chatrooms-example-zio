@@ -19,8 +19,5 @@ final case class ListRoomsLive(stateRef:TRef[ServerState]) extends ListRooms:
       rooms = state.getAllRoomNames
     } yield ServerMessage.AllRoomNames(rooms)
 
-
-
 object ListRoomsLive:
   val layer:ZLayer[TRef[ServerState], Nothing, ListRooms] = ZLayer.fromFunction(ListRoomsLive.apply)
-

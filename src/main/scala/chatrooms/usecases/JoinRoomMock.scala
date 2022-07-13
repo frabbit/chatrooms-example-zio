@@ -26,6 +26,3 @@ object JoinRoomMock extends Mock[JoinRoom]:
       }
     )
   }
-
-
-

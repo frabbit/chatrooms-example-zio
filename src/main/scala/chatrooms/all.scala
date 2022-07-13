@@ -6,13 +6,13 @@ trait AllSyntax {
   implicit final def allSyntaxChatrooms[A](a: A): AllOps[A] = new AllOps(a)
 }
 
-/** Adds chaining methods `tap` and `pipe` to every type.
+/** Add the chaining operator `|>` to every type.
  */
 final class AllOps[A](private val self: A) extends AnyVal {
     /** Converts the value by applying the function `f`.
     *
     * {{{
-    *   scala> import scala.util.chaining._
+    *   scala> import chatrooms.all.allSyntaxChatrooms
     *
     *   scala> val times6 = (_: Int) * 6
     *   times6: Int => Int = \$\$Lambda\$2023/975629453@17143b3b

@@ -15,4 +15,3 @@ object ListRooms {
   def run(clientId:ClientId):ZIO[ListRooms, Nothing, ServerMessage] =
     ZIO.serviceWithZIO[ListRooms](_.run(clientId))
 }
-

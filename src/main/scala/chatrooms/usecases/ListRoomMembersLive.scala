@@ -21,7 +21,5 @@ final case class ListRoomMembersLive(stateRef:TRef[ServerState]) extends ListRoo
   def run(clientId:ClientId, name: RoomName): ZIO[Any, Nothing, ServerMessage] =
     stateRef.get.commit.map(map(_, name, clientId))
 
-
 object ListRoomMembersLive:
   val layer:ZLayer[TRef[ServerState], Nothing, ListRoomMembers] = ZLayer.fromFunction(ListRoomMembersLive.apply)
-

@@ -21,6 +21,3 @@ object MessageServiceMock extends Mock[MessageService]:
       }
     )
   }
-
-
-

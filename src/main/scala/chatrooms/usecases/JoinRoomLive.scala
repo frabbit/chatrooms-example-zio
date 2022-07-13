@@ -22,4 +22,3 @@ final case class JoinRoomLive(stateRef:TRef[ServerState]) extends JoinRoom:
 
 object JoinRoomLive:
   val layer:ZLayer[TRef[ServerState], Nothing, JoinRoom] = ZLayer.fromFunction(JoinRoomLive.apply)
-

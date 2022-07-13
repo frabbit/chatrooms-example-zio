@@ -26,6 +26,3 @@ object ListRoomMembersMock extends Mock[ListRoomMembers]:
       }
     )
   }
-
-
-

@@ -16,4 +16,3 @@ object SendMessageToRoom {
   def run(clientId:ClientId, name:RoomName, msg:String):ZIO[SendMessageToRoom, Nothing, Option[ServerMessage]] =
     ZIO.serviceWithZIO[SendMessageToRoom](_.run(clientId, name, msg))
 }
-
