@@ -26,6 +26,7 @@ import zio.Clock
 import zio.ZEnvironment
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import zio.Console.ConsoleLive
+import zio.Console
 import zio.ZLayer
 
 

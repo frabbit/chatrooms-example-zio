@@ -27,7 +27,8 @@ object TestClient {
     for {
       _ <- receive.either.flatMap {
         case Right(WebSocketFrame.Text(m, finalF, rsv)) =>
-          Console.printLine("text message received: " ++ m).ignore *> callback(m)
+          //Console.printLine("text message received: " ++ m).ignore *>
+          callback(m)
         case Right(r) =>
           Console.printLine("other received: " ++ r.toString()).ignore
         case Left(e) =>
@@ -58,7 +59,6 @@ object TestClient {
     } yield ()
 
   def createClientRaw (callback:Callback, queue:TQueue[Option[String]], cfg:ServerConfig): RIO[Console with SttpClient, Response[Unit]] =
-    println(uri"ws://127.0.0.1:${cfg.port}")
     sendR(basicRequest.get(uri"ws://127.0.0.1:${cfg.port}")
       .response(asWebSocketAlways((x:WS) => app(x, callback, queue))))
 

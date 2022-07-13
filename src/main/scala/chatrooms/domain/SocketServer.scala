@@ -41,9 +41,7 @@ type RequestLookup = Map[String, (Request, TQueue[String])]
 class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) extends SocketServer {
 
   def sendTo (clientId:ClientId, message:String):ZIO[Any, Throwable, Unit] =
-
     for {
-      _ <- Console.printLine("sendTo called" ++ (clientId, message).toString).ignore
       lookup <- lookupRef.get.commit
       inboxOpt = lookup.find(_._1 == clientId.value).map(_._2._2)
       _ <- inboxOpt.match {
@@ -64,7 +62,7 @@ class SocketServerImpl (lookupRef: TRef[RequestLookup], cfg:SocketServerConfig) 
 
       case r@(Method.GET -> Path(Vector(), true)) =>
         for {
-          _ <- Console.printLine("SERVER received: " ++ r.method.toString ++ " : " ++ r.path.toList.mkString)
+          // _ <- Console.printLine("SERVER received: " ++ r.method.toString ++ " : " ++ r.path.toList.mkString)
           uuid <- ZIO.succeed(UUID.randomUUID())
           inbox <- TQueue.unbounded[String].commit
           _ <- lookupRef.update(x => x + (uuid.toString -> (r, inbox)) ).commit

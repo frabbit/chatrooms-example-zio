@@ -14,7 +14,7 @@ final case class SendDirectMessageLive(stateRef:TRef[ServerState], server:Socket
         state <- stateRef.get.commit
         receiverClientId = state.clients.find(_._2.name == to).map(_._2.id)
         fromName = state.clients.find(_._2.id == from).map(_._2.name)
-        _ <- zio.Console.printLine("SendDirectMessage " ++ (receiverClientId, fromName).toString).ignore
+        //_ <- zio.Console.printLine("SendDirectMessage " ++ (receiverClientId, fromName).toString).ignore
         _ <- (fromName, receiverClientId).match {
           case (Some(f), Some(id)) => server.sendTo(id, ServerMessage.DirectMessage(f, msg).encode).ignore
           case _ => ZIO.unit

@@ -35,7 +35,7 @@ object Server extends ZIOAppDefault:
 
   def onConnect (state:TRef[ServerState]):CallbackE[CommandHandler] = {
       case x@(clientId, WebSocketFrame.Text(txt)) => for {
-        _ <- ZStream.fromZIO(zio.Console.printLine("message received" ++ txt).ignore)
+        // _ <- ZStream.fromZIO(zio.Console.printLine("message received" ++ txt).ignore)
         x <- Command.parse(txt).match {
           case Some(cmd) => CommandHandler.handleCommand(cmd, clientId)
           case None =>
