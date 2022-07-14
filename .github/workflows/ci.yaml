@@ -25,6 +25,9 @@ jobs:
       run: |
         eval "$(./cs install bloop --only-prebuilt=true)"
         echo "/home/runner/.local/share/coursier/bin" >> $GITHUB_PATH
+    - name: Export sbt build to bloop
+      shell: bash
+      run: sbt bloopInstall
     - name: Test
       shell: bash
       run: make compile
