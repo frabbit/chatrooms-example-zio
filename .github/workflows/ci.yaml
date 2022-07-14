@@ -28,12 +28,12 @@ jobs:
     - name: Export sbt build to bloop
       shell: bash
       run: sbt bloopInstall
-    - name: Test
+    - name: Compile
       shell: bash
       run: make compile
-    - name: Test
+    - name: Test Unit
       shell: bash
       run: make test-unit
-    - name: Test
+    - name: Test E2E
       shell: bash
       run: make test-e2e
