@@ -22,7 +22,7 @@ jobs:
         eval "$(./cs setup --env)"
     - name: Bloop
       shell: bash
-      run: eval "$(cs install bloop --env --only-prebuilt=true)"
+      run: eval "$(./cs install bloop --env --only-prebuilt=true)"
     - name: Test
       shell: bash
       run: make compile
