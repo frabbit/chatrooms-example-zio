@@ -22,7 +22,8 @@ jobs:
         eval "$(./cs setup --env)"
     - name: Bloop
       shell: bash
-      run: eval "$(./cs install bloop --only-prebuilt=true)"
+      run: |
+        eval "$(./cs bootstrap bloop --standalone -o bloop)"
     - name: Test
       shell: bash
       run: make compile
