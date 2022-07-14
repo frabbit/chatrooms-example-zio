@@ -45,6 +45,7 @@ lazy val root = project
       "org.slf4j" % "slf4j-api" % "1.7.36",
       "org.slf4j" % "slf4j-simple" % "1.7.36",
       "com.github.j-mie6" %% "parsley" % "3.3.9",
+      "org.jline" % "jline" % "3.21.0",
       uzhttp,
       sttp,
       sttpzio,

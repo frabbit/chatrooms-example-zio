@@ -2,6 +2,10 @@ clean:
 	bloop clean root
 compile:
 	bloop compile root
+run-server:
+	bloop run root -m chatrooms.socketapp.Server
+run-client:
+	sbt "runMain chatrooms.clientapp.Client"
 compile-test-unit:
 	bloop compile root-test
 compile-test-e2e:
