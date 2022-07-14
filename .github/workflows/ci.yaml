@@ -22,7 +22,7 @@ jobs:
         ./cs setup
     - name: Bloop
       shell: bash
-      run: cs install bloop --only-prebuilt=true --force
+      run: eval "$(cs install bloop --env --only-prebuilt=true)
     - name: Test
       shell: bash
       run: make compile
