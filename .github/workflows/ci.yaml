@@ -19,10 +19,10 @@ jobs:
       run: |
         curl -fL https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz | gzip -d > cs
         chmod +x cs
-        ./cs setup
+        eval "$(./cs setup --env)"
     - name: Bloop
       shell: bash
-      run: eval "$(cs setup --env)
+      run: eval "$(cs install bloop --env --only-prebuilt=true)"
     - name: Test
       shell: bash
       run: make compile
