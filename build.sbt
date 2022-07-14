@@ -1,5 +1,7 @@
 import bloop.integrations.sbt.BloopDefaults
 
+enablePlugins(JavaAppPackaging)
+
 val scala3Version = "3.1.0"
 
 lazy val E2ETest = config("e2e") extend(Test)
@@ -35,8 +37,7 @@ lazy val root = project
     exportJars := true,
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     E2ETest/testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
-
-    Compile/packageBin/mainClass := Some("chatrooms.Server"),
+    Compile/packageBin/mainClass := Some("chatrooms.socketapp.Server"),
     libraryDependencies ++= Seq(
       "io.d11" %% "zhttp"      % "2.0.0-RC9",
       "org.scalameta" %% "munit" % "0.7.29" % "test,e2e",
