@@ -3,6 +3,7 @@ package chatrooms.domain
 case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room]) {
   def getClientIds ():Set[ClientId] = this.clients.keySet
   def clientExists (clientId:ClientId) = clients.exists(_._1 == clientId)
+  def isMember (clientId:ClientId, room:RoomName) = this.rooms.get(room).map(_.clients.exists(_ == clientId)).getOrElse(false)
   def addClient (client:Client):Either[ServerState.ClientExists | ServerState.UserNameTaken, ServerState] = this.match {
     case ServerState(clients, rooms) =>
       val doesClientExists = clientExists(client.id)

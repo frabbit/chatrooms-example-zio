@@ -7,6 +7,7 @@ object Generators {
   def message : Gen[Sized, String] = Gen.string1(Gen.char.filter(c => !List('\n').contains(c) ))
   def clientId : Gen[Sized, ClientId] = Gen.uuid.map(id => ClientId(id.toString()))
   def client : Gen[Sized, Client] = clientId.zip(userName).map(Client.apply)
+  def clientList : Gen[Sized, List[Client]] = Gen.listOfBounded(1, 30)(client)
   def roomName : Gen[Sized, RoomName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => RoomName(s))
   def userName : Gen[Sized, UserName] = Gen.stringBounded(1, 30)(Gen.alphaNumericChar.filter(c => !List('\n', ' ').contains(c) )).map(s => UserName(s))
   def command: Gen[Sized, Command] =
