@@ -32,7 +32,7 @@ object ListRoomsLiveSpec extends ZIOSpecDefault {
       }
     }
     +
-    test("return a list of existing rooms") {
+    test("return a set of existing rooms when multiple rooms exist") {
       check(Generators.clientId, Generators.userName) { (clientId, name) =>
         val roomA = RoomName("roomA")
         val roomB = RoomName("roomB")
