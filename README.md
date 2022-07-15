@@ -2,7 +2,7 @@
 
 ![ci workflow](https://github.com/frabbit/chatrooms-example-zio/actions/workflows/ci.yaml/badge.svg)
 
-Chatrooms is a simple Chat-Server written in Scala. It allows clients to communicate with each other in different rooms. The protocol is very simple, clients send commands to the server and the server sends ServerMessages to the clients. I wrote this application in order to improve my Scala and ZIO knowledge. 
+Chatrooms is a simple Chat-Server written in Scala. It allows clients to communicate with each other in different rooms. The protocol is very simple, clients send commands to the server via Websockets and the server sends ServerMessages back to the clients. I wrote this application in order to improve my Scala and ZIO knowledge. 
 
 # Usage
 
