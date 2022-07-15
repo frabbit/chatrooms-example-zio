@@ -24,6 +24,8 @@ object Generators {
     val errorGen = Gen.oneOf(
       Gen.const(ServerError.AlreadyJoined),
       Gen.const(ServerError.UserNameTaken),
+      Gen.const(ServerError.UserNameNotFound),
+      Gen.const(ServerError.NotJoined),
       Gen.const(ServerError.UserIsNotInRoom),
       roomName.map(ServerError.RoomNotFound(_))
       )
