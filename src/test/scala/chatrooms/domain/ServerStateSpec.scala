@@ -160,7 +160,7 @@ object ServerStateSpec extends ZIOSpecDefault {
             clientMap,
             Map(roomName -> Room(roomName, Set(client.id)))
           )
-          assert(initialState.joinRoom(roomName, client.id))(equalTo(expectedState))
+          assert(initialState.joinRoom(roomName, client.id))(equalTo(Right(expectedState)))
         }
       } +
       test("add the client to the room when it exist already") {
@@ -174,7 +174,7 @@ object ServerStateSpec extends ZIOSpecDefault {
             clientMap,
             Map(roomName -> Room(roomName, Set(clientB.id, clientA.id)))
           )
-          assert(initialState.joinRoom(roomName, clientB.id))(equalTo(expectedState))
+          assert(initialState.joinRoom(roomName, clientB.id))(equalTo(Right(expectedState)))
         }
       }
     )
