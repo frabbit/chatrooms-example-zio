@@ -28,7 +28,7 @@ object JoinRoomLiveSpec extends ZIOSpecDefault {
 
   private def deps(state:ServerState = ServerState.empty()) = stateLayer(state) >+> JoinRoomLive.layer
 
-  private val spec_ = suite("JoinLiveSpec.run should")(
+  private val spec_ = suite("JoinRoomLiveSpec.run should")(
     test("return a ServerMessage containing an error when user has not joined the server") {
       check(Generators.clientId, Generators.roomName) { (clientId, roomName) =>
         val app = JoinRoom.run(clientId, roomName)
@@ -51,7 +51,7 @@ object JoinRoomLiveSpec extends ZIOSpecDefault {
         assertZIO(app.provideLayer(deps(state = initialState)))(equalTo(Some(Set(clientA.name, clientB.name))))
       }
     }
-  )  @@ chatrooms.CustomTestConfig.use
+  ) @@ chatrooms.CustomTestConfig.use
 
   override def spec = spec_
 }
