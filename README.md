@@ -4,7 +4,7 @@ Chatrooms is a simple Chat-Server written in Scala. It allows clients to communi
 
 # Usage
 
-The project can be compiled and tested with `sbt` or `bloop`. The `Makefile` contains common build commands. You can compile the application with `make compile` and run the web server with `make run-server`. A simple client can be started with make `make run-client`. The Client can only be run with sbt, because bloop has problems with reading input from stdin.
+The project can be compiled and tested with `sbt` or `bloop`. Make sure to export the build for bloop with `sbt bloopInstall` initially. The `Makefile` contains common build commands. You can compile the application with `make compile` and run the web server with `make run-server`. A simple client can be started with make `make run-client`. The Client can only be run with sbt, because [bloop has problems with reading input from stdin](https://github.com/scalacenter/bloop/issues/882).
 
 # Test
 
