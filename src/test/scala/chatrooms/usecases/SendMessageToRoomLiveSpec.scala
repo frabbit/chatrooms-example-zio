@@ -39,7 +39,7 @@ object SendMessageToRoomLiveSpec extends ZIOSpecDefault {
   private val spec_ = suite("SendMessageToRoomLiveSpec.run should")(
     test("send a message to the user itself via MessageService") {
       check(Generators.clientId, Generators.roomName, Generators.userName, Generators.message) { (clientId, roomName, name, message) =>
-        val Right(initialState) = ServerState.empty().addClient(Client(clientId, name)).map(_.joinRoom(roomName, clientId))
+        val Right(initialState) = ServerState.empty().addClient(Client(clientId, name)).flatMap(_.joinRoom(roomName, clientId))
         val msg = ServerMessage.RoomMessage(name, roomName, message)
         val mock = MessageServiceMock.SendTo(equalTo(clientId, msg), value(())).toLayer
         val app = SendMessageToRoom.run(clientId, roomName, message)
@@ -52,7 +52,7 @@ object SendMessageToRoomLiveSpec extends ZIOSpecDefault {
           ServerState.empty()
           .addClient(Client(clientId, name))
           .flatMap(_.addClient(Client(senderId, senderName)))
-          .map(_.joinRoom(roomName, clientId))
+          .flatMap(_.joinRoom(roomName, clientId))
         val msg = ServerMessage.RoomMessage(name, roomName, message)
         val mock = MessageServiceMock.empty
         val app = SendMessageToRoom.run(senderId, roomName, message)
@@ -63,9 +63,9 @@ object SendMessageToRoomLiveSpec extends ZIOSpecDefault {
       check( Generators.clientId, Generators.userName, Generators.clientId, Generators.userName, Generators.roomName, Generators.message) { (clientIdA, nameA, clientIdB, nameB, roomName, message) =>
         val Right(initialState) = ServerState.empty()
           .addClient(Client(clientIdA, nameA))
-          .map(_.joinRoom(roomName, clientIdA))
+          .flatMap(_.joinRoom(roomName, clientIdA))
           .flatMap(_.addClient(Client(clientIdB, nameB)))
-          .map(_.joinRoom(roomName, clientIdB))
+          .flatMap(_.joinRoom(roomName, clientIdB))
 
         val msg = ServerMessage.RoomMessage(nameA, roomName, message)
         val mock = (

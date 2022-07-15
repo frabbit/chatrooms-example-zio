@@ -38,8 +38,8 @@ object ListRoomsLiveSpec extends ZIOSpecDefault {
         val roomB = RoomName("roomB")
         val Right(st) = ServerState.empty()
           .addClient(Client(clientId, name))
-          .map(_.joinRoom(roomA, clientId))
-          .map(_.joinRoom(roomB, clientId))
+          .flatMap(_.joinRoom(roomA, clientId))
+          .flatMap(_.joinRoom(roomB, clientId))
         val app = ListRooms.run(clientId)
         assertZIO(app.provideLayer(deps(st)))(equalTo(ServerMessage.AllRoomNames(Set(roomA, roomB))))
       }

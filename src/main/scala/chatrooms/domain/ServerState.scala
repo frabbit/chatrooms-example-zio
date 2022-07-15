@@ -2,11 +2,12 @@ package chatrooms.domain
 
 case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room]) {
   def getClientIds ():Set[ClientId] = this.clients.keySet
+  def clientExists (clientId:ClientId) = clients.exists(_._1 == clientId)
   def addClient (client:Client):Either[ServerState.ClientExists | ServerState.UserNameTaken, ServerState] = this.match {
     case ServerState(clients, rooms) =>
-      val clientExists = clients.exists(_._1 == client.id)
+      val doesClientExists = clientExists(client.id)
       lazy val nameExists = clients.exists(_._2.name == client.name)
-      if clientExists then Left(ServerState.ClientExists)
+      if doesClientExists then Left(ServerState.ClientExists)
       else if nameExists then Left(ServerState.UserNameTaken)
       else Right(ServerState(clients + (client.id -> client), rooms))
   }
@@ -29,12 +30,18 @@ case class ServerState(clients:Map[ClientId, Client], rooms:Map[RoomName, Room])
       cleanRooms.rooms
     )
 
-  def joinRoom (roomName:RoomName, clientId:ClientId):ServerState = this.rooms.get(roomName).match {
-    case Some(room) =>
-      ServerState(clients, rooms + (roomName -> room.addClient(clientId)))
-    case None =>
-      ServerState(this.clients, this.rooms + (roomName -> Room(roomName, Set(clientId))))
-  }
+  def joinRoom (roomName:RoomName, clientId:ClientId):Either[ServerState.ClientNotFound, ServerState] =
+    clientExists(clientId).match {
+      case false => Left(ServerState.ClientNotFound)
+      case true =>
+        this.rooms.get(roomName).match {
+        case Some(room) =>
+          Right(ServerState(clients, rooms + (roomName -> room.addClient(clientId))))
+        case None =>
+          Right(ServerState(this.clients, this.rooms + (roomName -> Room(roomName, Set(clientId)))))
+      }
+    }
+
 
   def leaveRoom (roomName:RoomName, client:Client):ServerState = this.match {
     case ServerState(clients, rooms) => {
@@ -56,5 +63,6 @@ object ServerState {
 
   case object ClientNotFound {}
   type ClientNotFound = ClientNotFound.type
+
   def empty () = ServerState(Map(), Map())
 }
